@@ -1,0 +1,16 @@
+version: "2"
+
+services:
+  api:
+    build: .
+    ports:
+      - 8080:8080
+    depends_on:
+      - redis
+    environment:
+      REDIS_URL: redis:6379
+      PORT: 8080
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
