@@ -9,7 +9,7 @@ type Config struct {
 		Environment string `env:"APP_ENV"     envDefault:"development"`
 	}
 	HTTP struct {
-		Port int `env:"HTTP_PORT" envDefault:"8080"`
+		Port int `env:"PORT" envDefault:"8080"`
 	}
 	Redis struct {
 		Addr     string `env:"REDIS_URL"     envDefault:"0.0.0.0:6379"`
