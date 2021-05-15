@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -17,20 +16,24 @@ import (
 
 const (
 	graphqlEndpoint = "/query"
-	defaultPort     = "8080"
 )
 
 type Server interface {
 	Serve() error
 }
 
+type ServerOption struct {
+	Port int
+}
+
 type server struct {
 	resolvers  resolver.Resolver
 	httpServer *http.Server
+	options    ServerOption
 }
 
-func NewServer(resolvers resolver.Resolver) (Server, func()) {
-	svr := &server{resolvers: resolvers}
+func NewServer(resolvers resolver.Resolver, options ServerOption) (Server, func()) {
+	svr := &server{resolvers: resolvers, options: options}
 	cleaner := func() {
 		if svr.httpServer != nil {
 			_ = svr.httpServer.Shutdown(context.Background())
@@ -41,16 +44,11 @@ func NewServer(resolvers resolver.Resolver) (Server, func()) {
 }
 
 func (s *server) Serve() error {
-	// TODO: use config package
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = defaultPort
-	}
+	log.Printf("runnning server at port: %v ...\n", s.options.Port)
 
-	log.Println("runnning server...")
 	router := chi.NewRouter()
 	s.registerRoutes(router)
-	s.httpServer = &http.Server{Addr: fmt.Sprintf(":%s", port), Handler: router}
+	s.httpServer = &http.Server{Addr: fmt.Sprintf(":%v", s.options.Port), Handler: router}
 
 	if err := s.httpServer.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("failed to serve: %w", err)

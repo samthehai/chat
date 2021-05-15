@@ -8,9 +8,12 @@ services:
     depends_on:
       - redis
     environment:
+      APP_ENV: development
       REDIS_URL: redis:6379
-      PORT: 8080
+      REDIS_PASS: chat
+      HTTP_PORT: 8080
   redis:
     image: redis:latest
+    command: redis-server --requirepass chat
     ports:
       - 6379:6379

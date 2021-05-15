@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/99designs/gqlgen v0.13.0
+	github.com/caarlos0/env/v6 v6.5.0
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/golangci/golangci-lint v1.40.0

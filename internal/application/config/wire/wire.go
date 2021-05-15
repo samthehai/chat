@@ -5,9 +5,9 @@ package wire
 
 import (
 	"context"
-	"os"
 
 	"github.com/google/wire"
+	"github.com/samthehai/chat/internal/application/config"
 	"github.com/samthehai/chat/internal/application/services/server"
 	"github.com/samthehai/chat/internal/domain/message"
 	"github.com/samthehai/chat/internal/domain/user"
@@ -20,6 +20,10 @@ import (
 
 var superSet = wire.NewSet(
 	wire.InterfaceValue(new(context.Context), context.Background()),
+
+	proviveRedisClientOption,
+	proviveServerOption,
+
 	wire.NewSet(
 		redis.NewRedisClient,
 		server.NewServer,
@@ -47,11 +51,19 @@ var superSet = wire.NewSet(
 	),
 
 	wire.Bind(new(external.Cacher), new(*redis.RedisClient)),
-	provideRedisURL,
 )
 
-func provideRedisURL() string {
-	return os.Getenv("REDIS_URL")
+var configObj = config.NewConfigFromEnv()
+
+func proviveRedisClientOption() redis.RedisClientOption {
+	return redis.RedisClientOption{
+		Addr:     configObj.Redis.Addr,
+		Password: configObj.Redis.Password,
+	}
+}
+
+func proviveServerOption() server.ServerOption {
+	return server.ServerOption{Port: configObj.HTTP.Port}
 }
 
 func InitializeServer() (server.Server, func(), error) {
