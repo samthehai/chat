@@ -1,22 +1,31 @@
+scalar Uint64
 scalar Time
 
+type User {
+  id: ID!
+  name: String!
+  firebaseId: String!
+  provider: String!
+}
+
 type Message {
-  id: String!
-  user: String!
+  id: ID!
+  user: User!
   createdAt: Time!
   text: String!
 }
 
 type Mutation {
-  postMessage(user: String!, text: String!): Message
+  postMessage(text: String!): Message
+  LoginWithFacebook: User
 }
 
 type Query {
   messages: [Message!]!
-  users: [String!]!
+  users: [User!]!
 }
 
 type Subscription {
-  messagePosted(user: String!): Message!
-  userJoined(user: String!): String!
+  messagePosted: Message!
+  userJoined: User!
 }

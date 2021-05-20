@@ -1,0 +1,5 @@
+development:
+  dialect: postgres
+  datasource: host=${DATASOURCE_HOST} dbname=${DATASOURCE_DATABASE} user=${DATASOURCE_USER} password=${DATASOURCE_PASS} sslmode=disable
+  dir: config/database/migrations
+  table: migrations

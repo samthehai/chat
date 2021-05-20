@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/samthehai/chat/internal/domain/message"
+	"github.com/samthehai/chat/internal/domain/entity"
 	"github.com/samthehai/chat/internal/infrastructure/repository/external"
 )
 
@@ -14,7 +14,7 @@ const messagesKey = "messages"
 
 type MessageRepository struct {
 	cacher   external.Cacher
-	msgChans map[string]chan *message.Message
+	msgChans map[string]chan *entity.Message
 	mutex    sync.Mutex
 }
 
@@ -23,12 +23,12 @@ func NewMessageRepository(
 ) *MessageRepository {
 	return &MessageRepository{
 		cacher:   cacher,
-		msgChans: map[string]chan *message.Message{},
+		msgChans: map[string]chan *entity.Message{},
 		mutex:    sync.Mutex{},
 	}
 }
 
-func (r *MessageRepository) PostMessage(_ context.Context, msg *message.Message) error {
+func (r *MessageRepository) PostMessage(_ context.Context, msg *entity.Message) error {
 	mj, _ := json.Marshal(msg)
 	if err := r.cacher.LPush(messagesKey, mj); err != nil {
 		return fmt.Errorf("[cacher] lpush: %w", err)
@@ -43,15 +43,15 @@ func (r *MessageRepository) PostMessage(_ context.Context, msg *message.Message)
 	return nil
 }
 
-func (r *MessageRepository) Messages(_ context.Context) ([]*message.Message, error) {
+func (r *MessageRepository) Messages(_ context.Context) ([]*entity.Message, error) {
 	values, err := r.cacher.LRange(messagesKey, 0, -1)
 	if err != nil {
 		return nil, fmt.Errorf("[cacher] messages: %w", err)
 	}
 
-	messages := []*message.Message{}
+	messages := []*entity.Message{}
 	for _, mj := range values {
-		m := &message.Message{}
+		m := &entity.Message{}
 		if err := json.Unmarshal([]byte(mj), &m); err != nil {
 			return nil, fmt.Errorf("[Unmarshal] messages: %w", err)
 		}
@@ -62,17 +62,17 @@ func (r *MessageRepository) Messages(_ context.Context) ([]*message.Message, err
 	return messages, nil
 }
 
-func (s *MessageRepository) MessagePosted(ctx context.Context, user string) (<-chan *message.Message, error) {
-	messages := make(chan *message.Message, 1)
+func (s *MessageRepository) MessagePosted(ctx context.Context, input entity.User) (<-chan *entity.Message, error) {
+	messages := make(chan *entity.Message, 1)
 	s.mutex.Lock()
-	s.msgChans[user] = messages
+	s.msgChans[input.ID] = messages
 	s.mutex.Unlock()
 
 	go func() {
 		<-ctx.Done()
 
 		s.mutex.Lock()
-		delete(s.msgChans, user)
+		delete(s.msgChans, input.ID)
 		s.mutex.Unlock()
 	}()
 

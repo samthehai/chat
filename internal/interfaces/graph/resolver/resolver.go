@@ -6,17 +6,20 @@ type Resolver struct {
 	query        generated.QueryResolver
 	mutation     generated.MutationResolver
 	subscription generated.SubscriptionResolver
+	message      generated.MessageResolver
 }
 
 func NewResolver(
 	query *QueryResolver,
 	mutation *MutationResolver,
 	subscription *SubscriptionResolver,
+	message *MessageResolver,
 ) Resolver {
 	return Resolver{
 		query:        query,
 		mutation:     mutation,
 		subscription: subscription,
+		message:      message,
 	}
 }
 
@@ -28,3 +31,6 @@ func (r *Resolver) Query() generated.QueryResolver { return r.query }
 
 // Subscription returns generated.SubscriptionResolver implementation.
 func (r *Resolver) Subscription() generated.SubscriptionResolver { return r.subscription }
+
+// Message returns generated.MessageResolver implementation.
+func (r *Resolver) Message() generated.MessageResolver { return r.message }

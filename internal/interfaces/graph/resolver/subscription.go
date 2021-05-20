@@ -4,27 +4,27 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/samthehai/chat/internal/domain/message"
-	"github.com/samthehai/chat/internal/interfaces/graph/resolver/commander"
+	"github.com/samthehai/chat/internal/domain/entity"
+	"github.com/samthehai/chat/internal/interfaces/graph/resolver/usecase"
 )
 
 type SubscriptionResolver struct {
-	messageCommander commander.MessageCommander
-	userCommander    commander.UserCommander
+	messageUsecase usecase.MessageUsecase
+	userUsecase    usecase.UserUsecase
 }
 
 func NewSubscriptionResolver(
-	messageCommander commander.MessageCommander,
-	userCommander commander.UserCommander,
+	messageUsecase usecase.MessageUsecase,
+	userUsecase usecase.UserUsecase,
 ) *SubscriptionResolver {
 	return &SubscriptionResolver{
-		messageCommander: messageCommander,
-		userCommander:    userCommander,
+		messageUsecase: messageUsecase,
+		userUsecase:    userUsecase,
 	}
 }
 
-func (r *SubscriptionResolver) MessagePosted(ctx context.Context, user string) (<-chan *message.Message, error) {
-	messages, err := r.messageCommander.MessagePosted(ctx, user)
+func (r *SubscriptionResolver) MessagePosted(ctx context.Context) (<-chan *entity.Message, error) {
+	messages, err := r.messageUsecase.MessagePosted(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("[Message commander] message posted: %w", err)
 	}
@@ -32,8 +32,8 @@ func (r *SubscriptionResolver) MessagePosted(ctx context.Context, user string) (
 	return messages, nil
 }
 
-func (r *SubscriptionResolver) UserJoined(ctx context.Context, user string) (<-chan string, error) {
-	users, err := r.userCommander.UserJoined(ctx, user)
+func (r *SubscriptionResolver) UserJoined(ctx context.Context) (<-chan *entity.User, error) {
+	users, err := r.userUsecase.UserJoined(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("[User commander] user joined: %w", err)
 	}

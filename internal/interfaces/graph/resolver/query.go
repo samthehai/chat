@@ -4,27 +4,27 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/samthehai/chat/internal/domain/message"
-	"github.com/samthehai/chat/internal/interfaces/graph/resolver/commander"
+	"github.com/samthehai/chat/internal/domain/entity"
+	"github.com/samthehai/chat/internal/interfaces/graph/resolver/usecase"
 )
 
 type QueryResolver struct {
-	messageCommander commander.MessageCommander
-	userCommander    commander.UserCommander
+	messageUsecase usecase.MessageUsecase
+	userUsecase    usecase.UserUsecase
 }
 
 func NewQueryResolver(
-	messageCommander commander.MessageCommander,
-	userCommander commander.UserCommander,
+	messageUsecase usecase.MessageUsecase,
+	userUsecase usecase.UserUsecase,
 ) *QueryResolver {
 	return &QueryResolver{
-		messageCommander: messageCommander,
-		userCommander:    userCommander,
+		messageUsecase: messageUsecase,
+		userUsecase:    userUsecase,
 	}
 }
 
-func (r *QueryResolver) Messages(ctx context.Context) ([]*message.Message, error) {
-	mm, err := r.messageCommander.Messages(ctx)
+func (r *QueryResolver) Messages(ctx context.Context) ([]*entity.Message, error) {
+	mm, err := r.messageUsecase.Messages(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("[Message Commander] message: %w", err)
 	}
@@ -32,8 +32,8 @@ func (r *QueryResolver) Messages(ctx context.Context) ([]*message.Message, error
 	return mm, nil
 }
 
-func (r *QueryResolver) Users(ctx context.Context) ([]string, error) {
-	users, err := r.userCommander.Users(ctx)
+func (r *QueryResolver) Users(ctx context.Context) ([]*entity.User, error) {
+	users, err := r.userUsecase.Users(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("[User Commander] users: %w", err)
 	}

@@ -1,4 +1,4 @@
-package message
+package entity
 
 import (
 	"time"
@@ -6,7 +6,7 @@ import (
 
 type Message struct {
 	ID        string    `json:"id"`
-	User      string    `json:"user"`
+	UserID    string    `json:"user"`
 	CreatedAt time.Time `json:"createdAt"`
 	Text      string    `json:"text"`
 }

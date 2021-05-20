@@ -4,27 +4,34 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/samthehai/chat/internal/domain/message"
-	"github.com/samthehai/chat/internal/interfaces/graph/resolver/commander"
+	"github.com/samthehai/chat/internal/domain/entity"
+	"github.com/samthehai/chat/internal/interfaces/graph/resolver/usecase"
 )
 
 type MutationResolver struct {
-	messageCommander commander.MessageCommander
+	messageUsecase usecase.MessageUsecase
+	userUsecase    usecase.UserUsecase
 }
 
 func NewMutationResolver(
-	messageCommander commander.MessageCommander,
+	messageUsecase usecase.MessageUsecase,
+	userUsecase usecase.UserUsecase,
 ) *MutationResolver {
 	return &MutationResolver{
-		messageCommander: messageCommander,
+		messageUsecase: messageUsecase,
+		userUsecase:    userUsecase,
 	}
 }
 
-func (r *MutationResolver) PostMessage(ctx context.Context, user string, text string) (*message.Message, error) {
-	m, err := r.messageCommander.PostMessage(ctx, user, text)
+func (r *MutationResolver) PostMessage(ctx context.Context, text string) (*entity.Message, error) {
+	m, err := r.messageUsecase.PostMessage(ctx, text)
 	if err != nil {
 		return nil, fmt.Errorf("[Message Commander] post message: %w", err)
 	}
 
 	return m, nil
+}
+
+func (r *MutationResolver) LoginWithFacebook(ctx context.Context) (*entity.User, error) {
+	return r.userUsecase.LoginWithFacebook(ctx)
 }

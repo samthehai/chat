@@ -1,19 +1,40 @@
 version: "2"
 
 services:
-  api:
-    build: .
-    ports:
-      - 8080:8080
-    depends_on:
-      - redis
-    environment:
-      APP_ENV: development
-      REDIS_URL: redis:6379
-      REDIS_PASS: chat
-      PORT: 8080
+  # api:
+  #   build: .
+  #   ports:
+  #     - 8080:8080
+  #   depends_on:
+  #     - redis
+  #     - postgres
+  #   environment:
+  #     APP_ENV: development
+  #     REDIS_URL: redis:6379
+  #     REDIS_PASS: chat
+  #     PORT: 8080
+  #   networks:
+  #     - chat-network
+
   redis:
     image: redis:latest
     command: redis-server --requirepass chat
     ports:
       - 6379:6379
+    networks:
+      - chat-network
+
+  postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: chat
+      POSTGRES_PASSWORD: chat
+      POSTGRES_DB: chat
+    networks:
+      - chat-network
+
+networks:
+  chat-network:
+    driver: bridge

@@ -10,13 +10,16 @@ import (
 	"github.com/google/wire"
 	"github.com/samthehai/chat/internal/application/config"
 	"github.com/samthehai/chat/internal/application/services/server"
-	"github.com/samthehai/chat/internal/domain/message"
-	"github.com/samthehai/chat/internal/domain/user"
+	"github.com/samthehai/chat/internal/application/services/server/middlewares"
+	"github.com/samthehai/chat/internal/domain/usecase"
+	repository2 "github.com/samthehai/chat/internal/domain/usecase/repository"
+	"github.com/samthehai/chat/internal/infrastructure/external/auth"
+	"github.com/samthehai/chat/internal/infrastructure/external/postgres"
 	"github.com/samthehai/chat/internal/infrastructure/external/redis"
 	"github.com/samthehai/chat/internal/infrastructure/repository"
 	"github.com/samthehai/chat/internal/infrastructure/repository/external"
 	"github.com/samthehai/chat/internal/interfaces/graph/resolver"
-	"github.com/samthehai/chat/internal/interfaces/graph/resolver/commander"
+	usecase2 "github.com/samthehai/chat/internal/interfaces/graph/resolver/usecase"
 )
 
 // Injectors from wire.go:
@@ -24,25 +27,41 @@ import (
 func InitializeServer() (server.Server, func(), error) {
 	redisClientOption := proviveRedisClientOption()
 	redisClient := redis.NewRedisClient(redisClientOption)
-	userRepository := repository.NewUserRepository(redisClient)
+	authenticator := middlewares.NewAuthenticator()
+	context := _wireContextValue
+	connectionConfig := provivePostgresConnectionConfig()
+	db := postgres.NewConnection(context, connectionConfig)
+	userRepository := repository.NewUserRepository(redisClient, authenticator, db)
 	messageRepository := repository.NewMessageRepository(redisClient)
-	messageCommander := message.NewMessageCommander(userRepository, messageRepository)
-	userCommander := user.NewUserCommander(userRepository)
-	queryResolver := resolver.NewQueryResolver(messageCommander, userCommander)
-	mutationResolver := resolver.NewMutationResolver(messageCommander)
-	subscriptionResolver := resolver.NewSubscriptionResolver(messageCommander, userCommander)
-	resolverResolver := resolver.NewResolver(queryResolver, mutationResolver, subscriptionResolver)
+	messageUsecase := usecase.NewMessageUsecase(userRepository, messageRepository)
+	userUsecase := usecase.NewUserUsecase(userRepository)
+	queryResolver := resolver.NewQueryResolver(messageUsecase, userUsecase)
+	mutationResolver := resolver.NewMutationResolver(messageUsecase, userUsecase)
+	subscriptionResolver := resolver.NewSubscriptionResolver(messageUsecase, userUsecase)
+	messageResolver := resolver.NewMessageResolver()
+	resolverResolver := resolver.NewResolver(queryResolver, mutationResolver, subscriptionResolver, messageResolver)
+	string2 := proviveFirebaseCredentials()
+	firebaseClient, err := auth.NewFirebaseClient(context, string2)
+	if err != nil {
+		return nil, nil, err
+	}
 	serverOption := proviveServerOption()
-	serverServer, cleanup := server.NewServer(resolverResolver, serverOption)
+	serverServer, cleanup := server.NewServer(resolverResolver, firebaseClient, serverOption)
 	return serverServer, func() {
 		cleanup()
 	}, nil
 }
 
+var (
+	_wireContextValue = context.Background()
+)
+
 // wire.go:
 
 var superSet = wire.NewSet(wire.InterfaceValue(new(context.Context), context.Background()), proviveRedisClientOption,
-	proviveServerOption, wire.NewSet(redis.NewRedisClient, server.NewServer), wire.NewSet(resolver.NewSubscriptionResolver, resolver.NewMutationResolver, resolver.NewQueryResolver, resolver.NewResolver), wire.Bind(new(commander.MessageCommander), new(*message.MessageCommander)), wire.Bind(new(commander.UserCommander), new(*user.UserCommander)), wire.NewSet(message.NewMessageCommander, user.NewUserCommander), wire.Bind(new(message.UserRepository), new(*repository.UserRepository)), wire.Bind(new(message.MessageRepository), new(*repository.MessageRepository)), wire.Bind(new(user.UserRepository), new(*repository.UserRepository)), wire.NewSet(repository.NewMessageRepository, repository.NewUserRepository), wire.Bind(new(external.Cacher), new(*redis.RedisClient)),
+	provivePostgresConnectionConfig,
+	proviveFirebaseCredentials,
+	proviveServerOption, wire.NewSet(redis.NewRedisClient, postgres.NewConnection, auth.NewFirebaseClient, server.NewServer), wire.NewSet(resolver.NewSubscriptionResolver, resolver.NewMutationResolver, resolver.NewQueryResolver, resolver.NewMessageResolver, resolver.NewResolver), wire.Bind(new(usecase2.MessageUsecase), new(*usecase.MessageUsecase)), wire.Bind(new(usecase2.UserUsecase), new(*usecase.UserUsecase)), wire.NewSet(usecase.NewMessageUsecase, usecase.NewUserUsecase), wire.Bind(new(repository2.UserRepository), new(*repository.UserRepository)), wire.Bind(new(repository2.MessageRepository), new(*repository.MessageRepository)), wire.NewSet(repository.NewMessageRepository, repository.NewUserRepository), wire.Bind(new(external.Cacher), new(*redis.RedisClient)), wire.Bind(new(external.Authenticator), new(*middlewares.Authenticator)), wire.NewSet(middlewares.NewAuthenticator), wire.Bind(new(middlewares.AuthManager), new(*auth.FirebaseClient)),
 )
 
 var configObj = config.NewConfigFromEnv()
@@ -54,6 +73,28 @@ func proviveRedisClientOption() redis.RedisClientOption {
 	}
 }
 
+func provivePostgresConnectionConfig() postgres.ConnectionConfig {
+	return postgres.ConnectionConfig{
+		Host:            configObj.Postgres.Host,
+		Port:            configObj.Postgres.Port,
+		User:            configObj.Postgres.User,
+		Pass:            configObj.Postgres.Pass,
+		Database:        configObj.Postgres.Database,
+		ConnMaxLifetime: configObj.Postgres.ConnMaxLifetime,
+		MaxIdleConns:    configObj.Postgres.MaxIdleConns,
+		MaxOpenConns:    configObj.Postgres.MaxOpenConns,
+	}
+}
+
 func proviveServerOption() server.ServerOption {
-	return server.ServerOption{Port: configObj.HTTP.Port}
+	return server.ServerOption{
+		Port:               configObj.HTTP.Port,
+		CORSAllowedOrigins: configObj.HTTP.CORSAllowedOrigins,
+		Environment:        configObj.App.Environment,
+		DebugUserID:        configObj.Debug.UserID,
+	}
+}
+
+func proviveFirebaseCredentials() string {
+	return configObj.Firebase.Credentials
 }
