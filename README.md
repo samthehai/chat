@@ -21,5 +21,3 @@ Or just browse directly to localhost:8080/ and play with the playground
 
 # TODO
 - Create Frontend
-- Using Database
-- Implement User and Authentication
