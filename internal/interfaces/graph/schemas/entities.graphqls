@@ -1,0 +1,16 @@
+type User implements Node {
+  id: ID!
+  name: String!
+  pictureUrl: String!
+  firebaseId: String!
+  provider: String!
+  emailAddress: String!
+  emailVerified: Boolean!
+}
+
+type Message {
+  id: String!
+  user: User!
+  createdAt: Time!
+  text: String!
+}

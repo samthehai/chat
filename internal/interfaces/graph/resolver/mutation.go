@@ -32,6 +32,6 @@ func (r *MutationResolver) PostMessage(ctx context.Context, text string) (*entit
 	return m, nil
 }
 
-func (r *MutationResolver) LoginWithFacebook(ctx context.Context) (*entity.User, error) {
-	return r.userUsecase.LoginWithFacebook(ctx)
+func (r *MutationResolver) CurrentUser(ctx context.Context) (*entity.User, error) {
+	return r.userUsecase.CurrentUser(ctx)
 }

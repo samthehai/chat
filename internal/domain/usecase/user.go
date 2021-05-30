@@ -22,7 +22,7 @@ func NewUserUsecase(
 	}
 }
 
-func (c *UserUsecase) LoginWithFacebook(ctx context.Context) (*entity.User, error) {
+func (c *UserUsecase) CurrentUser(ctx context.Context) (*entity.User, error) {
 	token, err := c.userRepository.GetAuthTokenFromContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("[User Repository] get auth token from context")
@@ -35,9 +35,12 @@ func (c *UserUsecase) LoginWithFacebook(ctx context.Context) (*entity.User, erro
 
 	if user == nil || errors.Is(err, domainerrors.ErrNotFound) {
 		newUser := entity.User{
-			Name:       token.EmailAddress,
-			Provider:   token.Provider,
-			FirebaseID: token.UserID,
+			Name:          token.Name,
+			PictureUrl:    token.PictureUrl,
+			EmailAddress:  token.EmailAddress,
+			EmailVerified: token.EmailVerified,
+			Provider:      token.Provider,
+			FirebaseID:    token.UserID,
 		}
 
 		createdUser, err := c.userRepository.AddUser(ctx, newUser)
@@ -51,10 +54,10 @@ func (c *UserUsecase) LoginWithFacebook(ctx context.Context) (*entity.User, erro
 	return user, nil
 }
 
-func (c *UserUsecase) Users(ctx context.Context) ([]*entity.User, error) {
-	users, err := c.userRepository.Users(ctx)
+func (c *UserUsecase) Friends(ctx context.Context, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) (*entity.UserFriendsConnection, error) {
+	users, err := c.userRepository.FindFriends(ctx, first, after, sortBy, sortOrder)
 	if err != nil {
-		return nil, fmt.Errorf("[User Repository] users: %w", err)
+		return nil, fmt.Errorf("[User Repository] find all: %w", err)
 	}
 
 	return users, nil
@@ -76,4 +79,13 @@ func (c *UserUsecase) UserJoined(ctx context.Context) (<-chan *entity.User, erro
 	}
 
 	return users, nil
+}
+
+func (c *UserUsecase) User(ctx context.Context, id entity.ID) (*entity.User, error) {
+	user, err := c.userRepository.FindUser(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("[User Repository] find user: %w", err)
+	}
+
+	return user, nil
 }

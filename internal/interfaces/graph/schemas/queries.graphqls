@@ -1,0 +1,4 @@
+type Query {
+  messages: [Message!]!
+  friends(first: Int!, after: ID!, sortBy: FriendsSortByType!, sortOrder: SortOrderType!): UserFriendsConnection!
+}

@@ -1,0 +1,8 @@
+enum SortOrderType {
+  SORT_ORDER_ASC
+  SORT_ORDER_DES
+}
+
+enum FriendsSortByType {
+  FRIENDS_SORT_BY_NAME
+}

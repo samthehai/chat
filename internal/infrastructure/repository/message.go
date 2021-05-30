@@ -14,7 +14,7 @@ const messagesKey = "messages"
 
 type MessageRepository struct {
 	cacher   external.Cacher
-	msgChans map[string]chan *entity.Message
+	msgChans map[entity.ID]chan *entity.Message
 	mutex    sync.Mutex
 }
 
@@ -23,7 +23,7 @@ func NewMessageRepository(
 ) *MessageRepository {
 	return &MessageRepository{
 		cacher:   cacher,
-		msgChans: map[string]chan *entity.Message{},
+		msgChans: map[entity.ID]chan *entity.Message{},
 		mutex:    sync.Mutex{},
 	}
 }

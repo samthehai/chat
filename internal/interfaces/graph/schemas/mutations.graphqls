@@ -1,0 +1,5 @@
+
+type Mutation {
+  postMessage(text: String!): Message
+  currentUser: User
+}

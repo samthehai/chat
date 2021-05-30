@@ -54,6 +54,8 @@ func (m *FirebaseClient) VerifyIDToken(
 
 	return &entity.AuthToken{
 		UserID:        token.UID,
+		Name:          token.Claims["name"].(string),
+		PictureUrl:    token.Claims["picture"].(string),
 		Provider:      token.Firebase.SignInProvider,
 		EmailAddress:  token.Claims["email"].(string),
 		EmailVerified: token.Claims["email_verified"].(bool),

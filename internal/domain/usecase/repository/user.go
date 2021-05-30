@@ -11,6 +11,7 @@ type UserRepository interface {
 	FindByFirebaseID(ctx context.Context, firebaseID string) (*entity.User, error)
 	GetUserFromContext(ctx context.Context) (*entity.User, error)
 	GetAuthTokenFromContext(ctx context.Context) (*entity.AuthToken, error)
-	Users(ctx context.Context) ([]*entity.User, error)
 	UserJoined(ctx context.Context, user entity.User) (<-chan *entity.User, error)
+	FindFriends(ctx context.Context, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) (*entity.UserFriendsConnection, error)
+	FindUser(ctx context.Context, id entity.ID) (*entity.User, error)
 }

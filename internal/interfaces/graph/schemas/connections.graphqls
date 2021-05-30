@@ -1,0 +1,22 @@
+interface Node {
+  id: ID!
+}
+
+type PageInfo {
+  startCursor: ID!
+  endCursor: ID!
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type UserFriendsConnection {
+  pageInfo: PageInfo!
+  edges: [UserFriendsEdge]
+  totalCount: Int!
+}
+
+type UserFriendsEdge {
+  cursor: ID!
+  node: User
+}
+

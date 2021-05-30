@@ -6,10 +6,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi"
+	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
 	"github.com/samthehai/chat/internal/application/services/server/middlewares"
 	"github.com/samthehai/chat/internal/interfaces/graph/generated"
@@ -74,7 +78,8 @@ func (s *server) Serve() error {
 
 func (s *server) registerMiddlewares(router *chi.Mux) {
 	router.Use(cors.New(cors.Options{
-		AllowedOrigins:   s.options.CORSAllowedOrigins,
+		// AllowedOrigins:   s.options.CORSAllowedOrigins,
+		AllowedOrigins:   []string{"http://*", "ws://*"},
 		AllowedHeaders:   []string{"Authorization", "Content-Type"},
 		AllowedMethods:   []string{"GET", "POST"},
 		AllowCredentials: true,
@@ -84,9 +89,28 @@ func (s *server) registerMiddlewares(router *chi.Mux) {
 
 func (s *server) registerRoutes(router *chi.Mux) {
 	router.Handle("/", playground.Handler("GraphQL playground", graphqlEndpoint))
-	router.Handle(graphqlEndpoint, s.newGraphQLServer())
+	// router.Handle(graphqlEndpoint, s.newGraphQLServer())
+	router.Handle(graphqlEndpoint, s.newWebSocketGraphQLServer())
 }
 
 func (s *server) newGraphQLServer() *handler.Server {
 	return handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &s.resolvers}))
+}
+
+func (s *server) newWebSocketGraphQLServer() *handler.Server {
+	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: &s.resolvers}))
+
+	srv.AddTransport(transport.POST{})
+	srv.AddTransport(transport.Websocket{
+		KeepAlivePingInterval: 10 * time.Second,
+		Upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+		},
+	})
+
+	srv.Use(extension.Introspection{})
+
+	return srv
 }
