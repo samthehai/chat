@@ -91,7 +91,7 @@ func proviveServerOption() server.ServerOption {
 		Port:               configObj.HTTP.Port,
 		CORSAllowedOrigins: configObj.HTTP.CORSAllowedOrigins,
 		Environment:        configObj.App.Environment,
-		DebugUserID:        configObj.Debug.UserID,
+		DebugUser:          configObj.Debug.User,
 	}
 }
 

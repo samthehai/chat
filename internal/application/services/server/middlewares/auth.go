@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -53,7 +54,7 @@ func parseAuthorizationHeader(
 func NewAuthenticationHandler(
 	authManager AuthManager,
 	isDevelopment bool,
-	debugUserID string,
+	debugUser string,
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(
@@ -64,10 +65,8 @@ func NewAuthenticationHandler(
 					r.Header.Get("Authorization"),
 				)
 
-				if isDevelopment && token == nil && len(debugUserID) > 0 {
-					token = &entity.AuthToken{
-						UserID: debugUserID,
-					}
+				if isDevelopment && token == nil && len(debugUser) > 0 {
+					json.Unmarshal([]byte(debugUser), &token)
 				} else if err != nil {
 					http.Error(w, "invalid token", http.StatusUnauthorized)
 					return

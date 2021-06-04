@@ -44,7 +44,7 @@ func (c *UserUsecase) CurrentUser(ctx context.Context) (*entity.User, error) {
 		}
 
 		createdUser, err := c.userRepository.AddUser(ctx, newUser)
-		if err == nil {
+		if err != nil {
 			return nil, fmt.Errorf("[User Repository] add user: %w", err)
 		}
 

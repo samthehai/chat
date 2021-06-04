@@ -32,7 +32,7 @@ type ServerOption struct {
 	Port               int
 	CORSAllowedOrigins []string
 	Environment        string
-	DebugUserID        string
+	DebugUser          string
 }
 
 type server struct {
@@ -84,7 +84,7 @@ func (s *server) registerMiddlewares(router *chi.Mux) {
 		AllowedMethods:   []string{"GET", "POST"},
 		AllowCredentials: true,
 	}).Handler)
-	router.Use(middlewares.NewAuthenticationHandler(s.authManager, s.options.Environment == "development", s.options.DebugUserID))
+	router.Use(middlewares.NewAuthenticationHandler(s.authManager, s.options.Environment == "development", s.options.DebugUser))
 }
 
 func (s *server) registerRoutes(router *chi.Mux) {

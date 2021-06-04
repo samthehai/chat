@@ -11,7 +11,7 @@ type Config struct {
 		Environment string `env:"APP_ENV"     envDefault:"development"`
 	}
 	Debug struct {
-		UserID string `env:"DEBUG_USER_ID"     envDefault:"hoge"`
+		User string `env:"DEBUG_USER"     envDefault:"hoge"`
 	}
 	HTTP struct {
 		Port               int      `env:"PORT"                 envDefault:"8080"`
