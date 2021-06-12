@@ -1,0 +1,7 @@
+type CreateNewConversationPayload {
+  conversation: Conversation!
+}
+
+type PostMessagePayload {
+  message: Message!
+}

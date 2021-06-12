@@ -6,3 +6,12 @@ enum SortOrderType {
 enum FriendsSortByType {
   FRIENDS_SORT_BY_NAME
 }
+
+enum MessageType {
+  TEXT
+}
+
+enum ConversationType {
+  SINGLE
+  GROUP
+}

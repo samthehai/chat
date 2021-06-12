@@ -23,19 +23,19 @@ func NewQueryResolver(
 	}
 }
 
-func (r *QueryResolver) Messages(ctx context.Context) ([]*entity.Message, error) {
-	mm, err := r.messageUsecase.Messages(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("[Message Usecase] message: %w", err)
-	}
+func (r *QueryResolver) Me(ctx context.Context) (*entity.User, error) {
+	return r.userUsecase.Me(ctx)
+}
 
-	return mm, nil
+func (r *QueryResolver) ConversationMessages(ctx context.Context, conversationID entity.ID, first int, after entity.ID) (*entity.ConversationMessagesConnection, error) {
+	// TODO
+	return nil, nil
 }
 
 func (r *QueryResolver) Friends(ctx context.Context, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) (*entity.UserFriendsConnection, error) {
 	friends, err := r.userUsecase.Friends(ctx, first, after, sortBy, sortOrder)
 	if err != nil {
-		return nil, fmt.Errorf("[User Usecase] friends: %w", err)
+		return nil, fmt.Errorf("friends: %w", err)
 	}
 
 	return friends, nil

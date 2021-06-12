@@ -8,9 +8,34 @@ type User implements Node {
   emailVerified: Boolean!
 }
 
-type Message {
-  id: String!
+type Conversation {
+  id: ID!
+  title: String!
+  creator: User
+  type: ConversationType!
+  createdAt: Time!
+  updatedAt: Time!
+  deletedAt: Time
+}
+
+type Participant {
+  id: ID!
+  conversation: Conversation!
   user: User!
   createdAt: Time!
-  text: String!
+  updatedAt: Time!
+}
+
+type Message implements Node {
+  id: ID!
+  sender: User!
+  conversation: Conversation!
+  type: MessageType!
+  content: String!
+  createdAt: Time!
+  updatedAt: Time!
+  deletedAt: Time
+}
+extend type Conversation {
+ messages: [Message!]!
 }

@@ -1,4 +1,15 @@
 type Query {
-  messages: [Message!]!
-  friends(first: Int!, after: ID!, sortBy: FriendsSortByType!, sortOrder: SortOrderType!): UserFriendsConnection!
+  me: User!
+  # TODO
+  conversationMessages(
+    conversationId: ID!
+    first: Int!
+    after: ID!
+  ): ConversationMessagesConnection!
+  friends(
+    first: Int!
+    after: ID!
+    sortBy: FriendsSortByType!
+    sortOrder: SortOrderType!
+  ): UserFriendsConnection!
 }

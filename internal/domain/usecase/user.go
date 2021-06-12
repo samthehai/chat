@@ -22,15 +22,28 @@ func NewUserUsecase(
 	}
 }
 
-func (c *UserUsecase) CurrentUser(ctx context.Context) (*entity.User, error) {
-	token, err := c.userRepository.GetAuthTokenFromContext(ctx)
+func (u *UserUsecase) GetUserFromContext(ctx context.Context) (*entity.User, error) {
+	user, err := u.userRepository.GetUserFromContext(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("[User Repository] get auth token from context")
+		return nil, fmt.Errorf("get user from context: %w", err)
 	}
 
-	user, err := c.userRepository.FindByFirebaseID(ctx, token.UserID)
+	if user == nil {
+		return nil, fmt.Errorf("user is nil")
+	}
+
+	return user, nil
+}
+
+func (u *UserUsecase) Login(ctx context.Context) (*entity.User, error) {
+	token, err := u.userRepository.GetAuthTokenFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get auth token from context")
+	}
+
+	user, err := u.userRepository.FindByFirebaseID(ctx, token.UserID)
 	if err != nil && !errors.Is(err, domainerrors.ErrNotFound) {
-		return nil, fmt.Errorf("[User Repository] find by firebase id: %w", err)
+		return nil, fmt.Errorf("find by firebase id: %w", err)
 	}
 
 	if user == nil || errors.Is(err, domainerrors.ErrNotFound) {
@@ -43,9 +56,9 @@ func (c *UserUsecase) CurrentUser(ctx context.Context) (*entity.User, error) {
 			FirebaseID:    token.UserID,
 		}
 
-		createdUser, err := c.userRepository.AddUser(ctx, newUser)
+		createdUser, err := u.userRepository.AddUser(ctx, newUser)
 		if err != nil {
-			return nil, fmt.Errorf("[User Repository] add user: %w", err)
+			return nil, fmt.Errorf("add user: %w", err)
 		}
 
 		user = createdUser
@@ -54,38 +67,52 @@ func (c *UserUsecase) CurrentUser(ctx context.Context) (*entity.User, error) {
 	return user, nil
 }
 
-func (c *UserUsecase) Friends(ctx context.Context, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) (*entity.UserFriendsConnection, error) {
-	users, err := c.userRepository.FindFriends(ctx, first, after, sortBy, sortOrder)
+func (u *UserUsecase) Friends(ctx context.Context, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) (*entity.UserFriendsConnection, error) {
+	users, err := u.userRepository.FindFriends(ctx, first, after, sortBy, sortOrder)
 	if err != nil {
-		return nil, fmt.Errorf("[User Repository] find all: %w", err)
+		return nil, fmt.Errorf("find all: %w", err)
 	}
 
 	return users, nil
 }
 
-func (c *UserUsecase) UserJoined(ctx context.Context) (<-chan *entity.User, error) {
-	user, err := c.userRepository.GetUserFromContext(ctx)
+func (u *UserUsecase) UserJoined(ctx context.Context) (<-chan *entity.User, error) {
+	user, err := u.userRepository.GetUserFromContext(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("[User Repository] get user from context: %w", err)
+		return nil, fmt.Errorf("get user from context: %w", err)
 	}
 
 	if user == nil {
-		return nil, fmt.Errorf("[User Repository] user is nil")
+		return nil, fmt.Errorf("user is nil")
 	}
 
-	users, err := c.userRepository.UserJoined(ctx, *user)
+	users, err := u.userRepository.UserJoined(ctx, *user)
 	if err != nil {
-		return nil, fmt.Errorf("[User Repository] user joined: %w", err)
+		return nil, fmt.Errorf("user joined: %w", err)
 	}
 
 	return users, nil
 }
 
-func (c *UserUsecase) User(ctx context.Context, id entity.ID) (*entity.User, error) {
-	user, err := c.userRepository.FindUser(ctx, id)
+func (u *UserUsecase) Me(ctx context.Context) (*entity.User, error) {
+	token, err := u.userRepository.GetAuthTokenFromContext(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("[User Repository] find user: %w", err)
+		return nil, fmt.Errorf("get auth token from context: %w", err)
+	}
+
+	user, err := u.userRepository.FindByFirebaseID(ctx, token.UserID)
+	if err != nil && !errors.Is(err, domainerrors.ErrNotFound) {
+		return nil, fmt.Errorf("find by firebase id: %w", err)
 	}
 
 	return user, nil
+}
+
+func (u *UserUsecase) Users(ctx context.Context, ids []entity.ID) ([]*entity.User, error) {
+	users, err := u.userRepository.FindUsers(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("find user: %w", err)
+	}
+
+	return users, nil
 }

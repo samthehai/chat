@@ -17,7 +17,10 @@ import (
 	"github.com/samthehai/chat/internal/infrastructure/external/redis"
 	"github.com/samthehai/chat/internal/infrastructure/repository"
 	"github.com/samthehai/chat/internal/infrastructure/repository/external"
+	"github.com/samthehai/chat/internal/interfaces/graph/loader"
+	loaderusecase "github.com/samthehai/chat/internal/interfaces/graph/loader/usecase"
 	"github.com/samthehai/chat/internal/interfaces/graph/resolver"
+	resolverloader "github.com/samthehai/chat/internal/interfaces/graph/resolver/loader"
 	resolverusecase "github.com/samthehai/chat/internal/interfaces/graph/resolver/usecase"
 )
 
@@ -40,6 +43,8 @@ var superSet = wire.NewSet(
 		resolver.NewMutationResolver,
 		resolver.NewQueryResolver,
 		resolver.NewMessageResolver,
+		resolver.NewConversationResolver,
+		resolver.NewParticipantResolver,
 		resolver.NewResolver,
 	),
 
@@ -62,6 +67,18 @@ var superSet = wire.NewSet(
 	wire.NewSet(
 		middlewares.NewAuthenticator,
 	),
+
+	wire.Bind(new(resolverloader.MessageLoader), new(*loader.MessageLoader)),
+	wire.Bind(new(resolverloader.ConversationLoader), new(*loader.ConversationLoader)),
+	wire.Bind(new(resolverloader.UserLoader), new(*loader.UserLoader)),
+	wire.NewSet(
+		loader.NewMessageLoader,
+		loader.NewConversationLoader,
+		loader.NewUserLoader,
+	),
+
+	wire.Bind(new(loaderusecase.MessageUsecase), new(*usecase.MessageUsecase)),
+	wire.Bind(new(loaderusecase.UserUsecase), new(*usecase.UserUsecase)),
 
 	wire.Bind(new(middlewares.AuthManager), new(*auth.FirebaseClient)),
 )

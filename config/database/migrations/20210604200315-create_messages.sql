@@ -3,8 +3,8 @@ CREATE TABLE IF NOT EXISTS messages(
   id SERIAL NOT NULL,
   conversation_id INTEGER NOT NULL,
   sender_id INTEGER NOT NULL,
-  type TEXT CHECK (type IN ('text')) NOT NULL,
-  content TEXT NOT NULL DEFAULT '',
+  type TEXT CHECK (type IN ('MESSAGE_TYPE_TEXT')) NOT NULL,
+  content TEXT NOT NULL,
   --
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

@@ -1,0 +1,10 @@
+input CreateNewConversationInput {
+  title: String!
+  recipentIdList: [ID!]!
+  text: String
+}
+
+input PostMessageInput {
+  conversationId: ID!
+  text: String!
+}

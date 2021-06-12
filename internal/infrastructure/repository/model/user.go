@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/samthehai/chat/internal/domain/entity"
 )
 
@@ -13,6 +15,8 @@ type User struct {
 	Provider      string    `json:"provider"`
 	EmailAddress  string    `json:"email_address"`
 	EmailVerified bool      `json:"email_verified"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 func ConvertModelUser(u *User) *entity.User {

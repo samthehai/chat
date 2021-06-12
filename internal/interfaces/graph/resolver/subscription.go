@@ -26,7 +26,7 @@ func NewSubscriptionResolver(
 func (r *SubscriptionResolver) MessagePosted(ctx context.Context) (<-chan *entity.Message, error) {
 	messages, err := r.messageUsecase.MessagePosted(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("[Message commander] message posted: %w", err)
+		return nil, fmt.Errorf("message posted: %w", err)
 	}
 
 	return messages, nil
@@ -35,7 +35,7 @@ func (r *SubscriptionResolver) MessagePosted(ctx context.Context) (<-chan *entit
 func (r *SubscriptionResolver) UserJoined(ctx context.Context) (<-chan *entity.User, error) {
 	users, err := r.userUsecase.UserJoined(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("[User commander] user joined: %w", err)
+		return nil, fmt.Errorf("user joined: %w", err)
 	}
 
 	return users, nil

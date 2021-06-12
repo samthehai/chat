@@ -13,10 +13,12 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/google/wire v0.5.0
 	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/graph-gophers/dataloader v5.0.0+incompatible // indirect
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/lib/pq v1.10.2 // indirect
 	github.com/onsi/gomega v1.12.0 // indirect
+	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/rs/cors v1.7.0
 	github.com/rubenv/sql-migrate v0.0.0-20210408115534-a32ed26c37ea
 	github.com/segmentio/ksuid v1.0.3

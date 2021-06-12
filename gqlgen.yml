@@ -13,9 +13,9 @@ exec:
 #   package: generated
 
 # Where should any generated models go?
-# model:
-#   filename: internal/interfaces/graph/model/models_gen.go
-#   package: model
+model:
+  filename: internal/interfaces/graph/model/models_gen.go
+  package: model
 
 # Where should the resolver implementations go?
 # resolver:

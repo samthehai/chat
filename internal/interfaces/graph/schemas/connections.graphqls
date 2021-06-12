@@ -11,12 +11,23 @@ type PageInfo {
 
 type UserFriendsConnection {
   pageInfo: PageInfo!
-  edges: [UserFriendsEdge]
+  edges: [UserFriendsEdge!]!
   totalCount: Int!
 }
 
 type UserFriendsEdge {
   cursor: ID!
   node: User
+}
+
+type ConversationMessagesConnection {
+  pageInfo: PageInfo!
+  edges: [ConversationMessagesEdge!]!
+  totalCount: Int!
+}
+
+type ConversationMessagesEdge {
+  cursor: ID!
+  node: Message!
 }
 

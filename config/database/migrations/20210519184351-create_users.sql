@@ -1,7 +1,7 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS users(
   id SERIAL NOT NULL,
-  name TEXT DEFAULT '',
+  name TEXT NOT NULL,
   picture_url TEXT DEFAULT '',
   email_address TEXT DEFAULT '',
   email_verified BOOLEAN DEFAULT FALSE,

@@ -1,5 +1,7 @@
-
 type Mutation {
-  postMessage(text: String!): Message
-  currentUser: User
+  createNewConversation(
+    input: CreateNewConversationInput!
+  ): CreateNewConversationPayload!
+  postMessage(input: PostMessageInput!): PostMessagePayload!
+  login: User!
 }
