@@ -67,7 +67,13 @@ func (u *UserUsecase) Login(ctx context.Context) (*entity.User, error) {
 	return user, nil
 }
 
-func (u *UserUsecase) Friends(ctx context.Context, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) (*entity.UserFriendsConnection, error) {
+func (u *UserUsecase) Friends(
+	ctx context.Context,
+	first int,
+	after entity.ID,
+	sortBy entity.FriendsSortByType,
+	sortOrder entity.SortOrderType,
+) ([]*entity.User, error) {
 	users, err := u.userRepository.FindFriends(ctx, first, after, sortBy, sortOrder)
 	if err != nil {
 		return nil, fmt.Errorf("find all: %w", err)

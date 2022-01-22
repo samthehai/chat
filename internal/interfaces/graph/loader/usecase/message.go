@@ -7,6 +7,6 @@ import (
 )
 
 type MessageUsecase interface {
-	MessagesInConversation(ctx context.Context, conversationIDs []entity.ID) (map[entity.ID][]*entity.Message, error)
-	Conversations(ctx context.Context, conversationIDs []entity.ID) ([]*entity.Conversation, error)
+	MessagesByConversationIDs(ctx context.Context, conversationIDs []entity.ID) (map[entity.ID][]*entity.Message, error)
+	ConversationByIDs(ctx context.Context, conversationIDs []entity.ID) ([]*entity.Conversation, error)
 }

@@ -35,6 +35,8 @@ func (u *MessageUsecase) PostMessage(
 		return nil, fmt.Errorf("create message: %w", err)
 	}
 
+	u.messageRepository.FanoutMessage(ctx, message)
+
 	return message, nil
 }
 
@@ -58,7 +60,7 @@ func (u *MessageUsecase) CreateNewConversation(
 		}
 	}
 
-	cc, err := u.messageRepository.FindConversations(ctx, []entity.ID{*conversationID})
+	cc, err := u.messageRepository.FindConversationsByIDs(ctx, []entity.ID{*conversationID})
 	if err != nil {
 		return nil, fmt.Errorf("find conversation: %w", err)
 	}
@@ -88,7 +90,7 @@ func (u *MessageUsecase) MessagePosted(ctx context.Context) (<-chan *entity.Mess
 	return messages, nil
 }
 
-func (u *MessageUsecase) MessagesInConversation(ctx context.Context, conversationIDs []entity.ID) (map[entity.ID][]*entity.Message, error) {
+func (u *MessageUsecase) MessagesByConversationIDs(ctx context.Context, conversationIDs []entity.ID) (map[entity.ID][]*entity.Message, error) {
 	res, err := u.messageRepository.FindMessagesInConversations(ctx, conversationIDs)
 	if err != nil {
 		return nil, fmt.Errorf("find messages in conversations: %w", err)
@@ -97,11 +99,25 @@ func (u *MessageUsecase) MessagesInConversation(ctx context.Context, conversatio
 	return res, nil
 }
 
-func (u *MessageUsecase) Conversations(ctx context.Context, conversationIDs []entity.ID) ([]*entity.Conversation, error) {
-	res, err := u.messageRepository.FindConversations(ctx, conversationIDs)
+func (u *MessageUsecase) ConversationByIDs(ctx context.Context, conversationIDs []entity.ID) ([]*entity.Conversation, error) {
+	res, err := u.messageRepository.FindConversationsByIDs(ctx, conversationIDs)
 	if err != nil {
 		return nil, fmt.Errorf("find conversations: %w", err)
 	}
 
 	return res, nil
+}
+
+func (u *MessageUsecase) Conversations(ctx context.Context) ([]*entity.Conversation, error) {
+	user, err := u.userRepository.GetUserFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get user from context: %w", err)
+	}
+
+	if user == nil {
+		return nil, fmt.Errorf("user is nil")
+	}
+
+	// TODO:
+	return nil, nil
 }

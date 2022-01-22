@@ -177,9 +177,7 @@ func (r *UserRepository) GetAuthTokenFromContext(ctx context.Context) (*entity.A
 	return token, nil
 }
 
-// FindFriends implemented base on graphql connections
-// https://relay.dev/graphql/connections.htm
-func (r *UserRepository) FindFriends(ctx context.Context, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) (*entity.UserFriendsConnection, error) {
+func (r *UserRepository) FindFriends(ctx context.Context, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) ([]*entity.User, error) {
 	if !entity.IsValidFriendsSortByType(string(sortBy)) {
 		return nil, fmt.Errorf("invalid sortBy: %v", sortBy)
 	}
@@ -192,63 +190,27 @@ func (r *UserRepository) FindFriends(ctx context.Context, first int, after entit
 	)
 
 	if after == 0 {
-		query =
-			"SELECT id, name, picture_url, firebase_id, provider, email_address, email_verified, " +
-				"TRUE AS has_previous_page, " +
-
-				"CASE " +
-				" WHEN ( " +
-				"  SELECT COUNT(*) " +
-				"  FROM ( " +
-				"   SELECT * FROM users " +
-				"   ORDER BY " + sortColumn + " ASC, id ASC LIMIT $1 + 1 " +
-				"  ) as np " +
-				" ) = $1 + 1 " +
-				"THEN TRUE ELSE FALSE " +
-				"END AS has_next_page " +
-
-				"FROM users " +
-				"ORDER BY " + sortColumn + " ASC, id ASC LIMIT $1"
-
+		query = fmt.Sprintf(
+			` SELECT id, name, picture_url, firebase_id, provider, email_address, email_verified
+				FROM users
+				ORDER BY %v ASC, id ASC LIMIT $1`,
+			sortColumn,
+		)
 		rows, err = r.db.QueryContext(ctx, query, first)
 	} else {
-		query =
-			"SELECT id, name, picture_url, firebase_id, provider, email_address, email_verified, " +
-				"CASE " +
-				" WHEN ( " +
-				"  SELECT COUNT(*) FROM users " +
-				"   WHERE " + sortColumn + " <= (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
-				"   AND id != $2 " +
-				"   AND id NOT IN " +
-				"    (SELECT id FROM users " +
-				"      WHERE " + sortColumn + " = (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
-				"      AND id >= $2 ) " +
-				" ) > 0 " +
-				"THEN TRUE ELSE FALSE " +
-				"END AS has_previous_page, " +
-
-				"CASE " +
-				" WHEN ( " +
-				"  SELECT COUNT(*) " +
-				"  FROM ( " +
-				"   SELECT * FROM users " +
-				"   WHERE " + sortColumn + " >= (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
-				"   AND id != $2 " +
-				"   ORDER BY " + sortColumn + " ASC, id ASC LIMIT $1 + 1 " +
-				"  ) as np " +
-				" ) = $1 + 1 " +
-				"THEN TRUE ELSE FALSE " +
-				"END AS has_next_page " +
-
-				"FROM users " +
-				"WHERE " + sortColumn + " >= (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
-				"AND id != $2 " +
-				"AND id NOT IN ( " +
-				" SELECT id FROM users " +
-				" WHERE " + sortColumn + " = (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
-				" AND id <= $2 " +
-				") " +
-				"ORDER BY " + sortColumn + " ASC, id ASC LIMIT $1"
+		query = fmt.Sprintf(
+			` SELECT id, name, picture_url, firebase_id, provider, email_address, email_verified
+			  FROM users
+			  WHERE %[1]v >= (SELECT %[1]v FROM users WHERE id = $2 )
+					AND id != $2
+					AND id NOT IN (
+				  	SELECT id FROM users
+				  	WHERE %[1]v = (SELECT %[1]v FROM users WHERE id = $2)
+				  		AND id <= $2
+					)
+			  ORDER BY %[1]v ASC, id ASC LIMIT $1`,
+			sortColumn,
+		)
 
 		rows, err = r.db.QueryContext(ctx, query, first, after)
 	}
@@ -258,58 +220,20 @@ func (r *UserRepository) FindFriends(ctx context.Context, first int, after entit
 	}
 	defer rows.Close()
 
-	var (
-		userFriendEdges []*entity.UserFriendsEdge
-		hasNextPage     bool
-		hasPreviousPage bool
-	)
+	var users []*model.User
 
 	for rows.Next() {
-		var edge struct {
-			model.User
-			HasNextPage     bool `json:"has_next_page"`
-			HasPreviousPage bool `json:"has_previous_page"`
-		}
-
-		if err := rows.Scan(
-			&edge.ID,
-			&edge.Name,
-			&edge.PictureUrl,
-			&edge.FirebaseID,
-			&edge.Provider,
-			&edge.EmailAddress,
-			&edge.EmailVerified,
-			&edge.HasNextPage,
-			&edge.HasPreviousPage,
-		); err != nil {
+		var user model.User
+		if err := rows.Scan(&user.ID, &user.Name, &user.FirebaseID, &user.Provider); err != nil {
 			return nil, err
 		}
 
-		hasNextPage = edge.HasNextPage
-		hasPreviousPage = edge.HasPreviousPage
-		user := model.ConvertModelUser(&edge.User)
-		userFriendEdges = append(userFriendEdges, &entity.UserFriendsEdge{
-			Node:   *user,
-			Cursor: user.ID,
-		})
+		users = append(users, &user)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	if len(userFriendEdges) == 0 {
-		return &entity.UserFriendsConnection{}, nil
-	}
-
-	return &entity.UserFriendsConnection{
-		Edges: userFriendEdges,
-		PageInfo: entity.PageInfo{
-			HasPreviousPage: hasPreviousPage,
-			HasNextPage:     hasNextPage,
-			StartCursor:     userFriendEdges[0].Cursor,
-			EndCursor:       userFriendEdges[len(userFriendEdges)-1].Cursor,
-		},
-		TotalCount: int64(len(userFriendEdges)),
-	}, nil
+	return model.ConvertModelUsers(users), nil
 }

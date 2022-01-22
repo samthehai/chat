@@ -18,7 +18,7 @@ func NewMessageLoader(
 ) *MessageLoader {
 	return &MessageLoader{
 		messagesInConversationLoader: newMessagesInConversationLoader(
-			messageFetcher.MessagesInConversation,
+			messageFetcher.MessagesByConversationIDs,
 		),
 	}
 }

@@ -12,6 +12,6 @@ type UserRepository interface {
 	GetUserFromContext(ctx context.Context) (*entity.User, error)
 	GetAuthTokenFromContext(ctx context.Context) (*entity.AuthToken, error)
 	UserJoined(ctx context.Context, user entity.User) (<-chan *entity.User, error)
-	FindFriends(ctx context.Context, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) (*entity.UserFriendsConnection, error)
+	FindFriends(ctx context.Context, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) ([]*entity.User, error)
 	FindUsers(ctx context.Context, userIDs []entity.ID) ([]*entity.User, error)
 }

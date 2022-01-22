@@ -1,4 +1,4 @@
-type User implements Node {
+type User {
   id: ID!
   name: String!
   pictureUrl: String!
@@ -6,6 +6,26 @@ type User implements Node {
   provider: String!
   emailAddress: String!
   emailVerified: Boolean!
+  # friends of user, relay loading
+  friends(
+    first: Int! = 10
+    after: ID! = 0
+    sortBy: FriendsSortByType! = FRIENDS_SORT_BY_NAME
+    sortOrder: SortOrderType! = SORT_ORDER_ASC
+  ): FriendsConnection!
+  # conversations of user, relay loading
+  conversations(first: Int!, after: ID!): ConversationsConnection!
+}
+
+type Message {
+  id: ID!
+  sender: User!
+  conversation: Conversation!
+  type: MessageType!
+  content: String!
+  createdAt: Time!
+  updatedAt: Time!
+  deletedAt: Time
 }
 
 type Conversation {
@@ -16,26 +36,8 @@ type Conversation {
   createdAt: Time!
   updatedAt: Time!
   deletedAt: Time
-}
-
-type Participant {
-  id: ID!
-  conversation: Conversation!
-  user: User!
-  createdAt: Time!
-  updatedAt: Time!
-}
-
-type Message implements Node {
-  id: ID!
-  sender: User!
-  conversation: Conversation!
-  type: MessageType!
-  content: String!
-  createdAt: Time!
-  updatedAt: Time!
-  deletedAt: Time
-}
-extend type Conversation {
- messages: [Message!]!
+  # messages in conversation, relay loading
+  messages(first: Int! = 10, after: ID! = 0): ConversationMessagesConnection!
+  # participants in conversation, relay loading
+  participants: [User!]!
 }
