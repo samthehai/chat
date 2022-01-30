@@ -67,7 +67,13 @@ func (u *UserUsecase) Login(ctx context.Context) (*entity.User, error) {
 	return user, nil
 }
 
-func (u *UserUsecase) Friends(ctx context.Context, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) (*entity.UserFriendsConnection, error) {
+func (u *UserUsecase) Friends(
+	ctx context.Context,
+	first int,
+	after entity.ID,
+	sortBy entity.FriendsSortByType,
+	sortOrder entity.SortOrderType,
+) (*entity.FriendsConnection, error) {
 	users, err := u.userRepository.FindFriends(ctx, first, after, sortBy, sortOrder)
 	if err != nil {
 		return nil, fmt.Errorf("find all: %w", err)
@@ -112,6 +118,18 @@ func (u *UserUsecase) Users(ctx context.Context, ids []entity.ID) ([]*entity.Use
 	users, err := u.userRepository.FindUsers(ctx, ids)
 	if err != nil {
 		return nil, fmt.Errorf("find user: %w", err)
+	}
+
+	return users, nil
+}
+
+func (u *UserUsecase) GetFriendIDsFromUserIDs(
+	ctx context.Context,
+	inputs []entity.FriendsQueryInput,
+) (map[entity.ID]*entity.IDsConnection, error) {
+	users, err := u.userRepository.GetFriendIDsFromUserIDs(ctx, inputs)
+	if err != nil {
+		return nil, fmt.Errorf("get friend ids from user ids: %w", err)
 	}
 
 	return users, nil

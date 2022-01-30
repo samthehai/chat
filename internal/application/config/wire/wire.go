@@ -1,4 +1,5 @@
 // go:generate wire
+//go:build wireinject
 // +build wireinject
 
 package wire
@@ -44,7 +45,7 @@ var superSet = wire.NewSet(
 		resolver.NewQueryResolver,
 		resolver.NewMessageResolver,
 		resolver.NewConversationResolver,
-		resolver.NewParticipantResolver,
+		resolver.NewUserResolver,
 		resolver.NewResolver,
 	),
 

@@ -1,7 +1,3 @@
-interface Node {
-  id: ID!
-}
-
 type PageInfo {
   startCursor: ID!
   endCursor: ID!
@@ -9,15 +5,26 @@ type PageInfo {
   hasNextPage: Boolean!
 }
 
-type UserFriendsConnection {
+type FriendsConnection {
   pageInfo: PageInfo!
-  edges: [UserFriendsEdge!]!
+  edges: [FriendsEdge!]!
   totalCount: Int!
 }
 
-type UserFriendsEdge {
+type FriendsEdge {
   cursor: ID!
   node: User
+}
+
+type ConversationsConnection {
+  pageInfo: PageInfo!
+  edges: [ConversationsEdge!]!
+  totalCount: Int!
+}
+
+type ConversationsEdge {
+  cursor: ID!
+  node: Conversation!
 }
 
 type ConversationMessagesConnection {
@@ -30,4 +37,3 @@ type ConversationMessagesEdge {
   cursor: ID!
   node: Message!
 }
-

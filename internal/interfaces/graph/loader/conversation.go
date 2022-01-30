@@ -18,7 +18,7 @@ func NewConversationLoader(
 ) *ConversationLoader {
 	return &ConversationLoader{
 		conversationLoader: newConversationLoader(
-			messageUsecase.Conversations,
+			messageUsecase.ConversationByIDs,
 		),
 	}
 }

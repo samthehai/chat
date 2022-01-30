@@ -16,7 +16,7 @@ import (
 type MessageRepository struct {
 	cacher   external.Cacher
 	msgChans map[entity.ID]chan *entity.Message
-	mutex    sync.Mutex
+	mutex    sync.RWMutex
 	db       *sql.DB
 }
 
@@ -28,7 +28,7 @@ func NewMessageRepository(
 		cacher:   cacher,
 		db:       db,
 		msgChans: map[entity.ID]chan *entity.Message{},
-		mutex:    sync.Mutex{},
+		mutex:    sync.RWMutex{},
 	}
 }
 
@@ -94,7 +94,7 @@ func (r *MessageRepository) CreateParticipants(
 	return nil
 }
 
-func (r *MessageRepository) FindConversations(
+func (r *MessageRepository) FindConversationsByIDs(
 	ctx context.Context,
 	conversationIDs []entity.ID,
 ) ([]*entity.Conversation, error) {
@@ -134,6 +134,16 @@ func (r *MessageRepository) FindConversations(
 	}
 
 	return model.ConvertModelConversations(conversations), nil
+}
+
+func (r *MessageRepository) FindConversationsByUserID(
+	ctx context.Context,
+	userID entity.ID,
+	first int,
+	after entity.ID,
+) ([]*entity.Conversation, error) {
+	// TODO: impl
+	return nil, nil
 }
 
 func (r *MessageRepository) CreateMessage(
@@ -244,4 +254,15 @@ func (s *MessageRepository) MessagePosted(
 	}()
 
 	return messages, nil
+}
+
+func (s *MessageRepository) FanoutMessage(
+	ctx context.Context,
+	message *entity.Message,
+) {
+	s.mutex.RLock()
+	for _, c := range s.msgChans {
+		c <- message
+	}
+	s.mutex.RUnlock()
 }

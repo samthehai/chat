@@ -23,7 +23,10 @@ func NewMessageResolver(
 	}
 }
 
-func (r *MessageResolver) Sender(ctx context.Context, obj *entity.Message) (*entity.User, error) {
+func (r *MessageResolver) Sender(
+	ctx context.Context,
+	obj *entity.Message,
+) (*entity.User, error) {
 	sender, err := r.userLoader.LoadUser(ctx, obj.SenderID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load user: %w", err)
@@ -32,7 +35,10 @@ func (r *MessageResolver) Sender(ctx context.Context, obj *entity.Message) (*ent
 	return sender, nil
 }
 
-func (r *MessageResolver) Conversation(ctx context.Context, obj *entity.Message) (*entity.Conversation, error) {
+func (r *MessageResolver) Conversation(
+	ctx context.Context,
+	obj *entity.Message,
+) (*entity.Conversation, error) {
 	c, err := r.conversationLoader.LoadConversation(ctx, obj.ConversationID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load conversation: %w", err)

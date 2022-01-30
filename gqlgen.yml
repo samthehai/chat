@@ -36,6 +36,7 @@ model:
 # if they match it will use them, otherwise it will generate them.
 autobind:
   - github.com/samthehai/chat/internal/domain/entity
+  - github.com/samthehai/chat/internal/interfaces/graph/model
 
 # This section declares type mapping between the GraphQL and go type systems
 #

@@ -8,7 +8,7 @@ type Resolver struct {
 	subscription generated.SubscriptionResolver
 	message      generated.MessageResolver
 	conversation generated.ConversationResolver
-	participant  generated.ParticipantResolver
+	user         generated.UserResolver
 }
 
 func NewResolver(
@@ -17,7 +17,7 @@ func NewResolver(
 	subscription *SubscriptionResolver,
 	message *MessageResolver,
 	conversation *ConversationResolver,
-	participant *ParticipantResolver,
+	user *UserResolver,
 ) Resolver {
 	return Resolver{
 		query:        query,
@@ -25,7 +25,7 @@ func NewResolver(
 		subscription: subscription,
 		message:      message,
 		conversation: conversation,
-		participant:  participant,
+		user:         user,
 	}
 }
 
@@ -45,4 +45,4 @@ func (r *Resolver) Message() generated.MessageResolver { return r.message }
 func (r *Resolver) Conversation() generated.ConversationResolver { return r.conversation }
 
 // Participant returns generated.ParticipantResolver implementation.
-func (r *Resolver) Participant() generated.ParticipantResolver { return r.participant }
+func (r *Resolver) User() generated.UserResolver { return r.user }

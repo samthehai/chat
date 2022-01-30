@@ -23,7 +23,10 @@ func NewConversationResolver(
 	}
 }
 
-func (r *ConversationResolver) Creator(ctx context.Context, obj *entity.Conversation) (*entity.User, error) {
+func (r *ConversationResolver) Creator(
+	ctx context.Context,
+	obj *entity.Conversation,
+) (*entity.User, error) {
 	creator, err := r.userLoader.LoadUser(ctx, *obj.CreatorID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load user: %w", err)
@@ -32,11 +35,20 @@ func (r *ConversationResolver) Creator(ctx context.Context, obj *entity.Conversa
 	return creator, nil
 }
 
-func (r *ConversationResolver) Messages(ctx context.Context, obj *entity.Conversation) ([]*entity.Message, error) {
-	messages, err := r.messageLoader.LoadMessagesInConversation(ctx, obj.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load messages in conversation: %w", err)
-	}
+func (r *ConversationResolver) Messages(
+	ctx context.Context,
+	obj *entity.Conversation,
+	first int,
+	after entity.ID,
+) (*entity.ConversationMessagesConnection, error) {
+	// TODO
+	return nil, nil
+}
 
-	return messages, nil
+func (r *ConversationResolver) Participants(
+	ctx context.Context,
+	obj *entity.Conversation,
+) ([]*entity.User, error) {
+	// TODO
+	return nil, nil
 }

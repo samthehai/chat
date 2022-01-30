@@ -14,7 +14,7 @@ type MessageRepository interface {
 		conversationType entity.ConversationType,
 		recipentIDs []entity.ID,
 	) (*entity.ID, error)
-	FindConversations(
+	FindConversationsByIDs(
 		ctx context.Context,
 		conversationIDs []entity.ID,
 	) ([]*entity.Conversation, error)
@@ -33,4 +33,8 @@ type MessageRepository interface {
 		ctx context.Context,
 		user entity.User,
 	) (<-chan *entity.Message, error)
+	FanoutMessage(
+		ctx context.Context,
+		message *entity.Message,
+	)
 }
