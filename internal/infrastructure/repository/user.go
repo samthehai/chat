@@ -99,7 +99,8 @@ func (r *UserRepository) FindUsers(ctx context.Context, userIDs []entity.ID) ([]
 
 	for rows.Next() {
 		var user model.User
-		if err := rows.Scan(&user.ID, &user.Name, &user.FirebaseID, &user.Provider); err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.PictureUrl,
+			&user.FirebaseID, &user.Provider, &user.EmailAddress, &user.EmailVerified); err != nil {
 			return nil, err
 		}
 
@@ -177,7 +178,7 @@ func (r *UserRepository) GetAuthTokenFromContext(ctx context.Context) (*entity.A
 	return token, nil
 }
 
-func (r *UserRepository) FindFriends(ctx context.Context, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) ([]*entity.User, error) {
+func (r *UserRepository) FindFriends(ctx context.Context, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) (*entity.FriendsConnection, error) {
 	if !entity.IsValidFriendsSortByType(string(sortBy)) {
 		return nil, fmt.Errorf("invalid sortBy: %v", sortBy)
 	}
@@ -190,27 +191,63 @@ func (r *UserRepository) FindFriends(ctx context.Context, first int, after entit
 	)
 
 	if after == 0 {
-		query = fmt.Sprintf(
-			` SELECT id, name, picture_url, firebase_id, provider, email_address, email_verified
-				FROM users
-				ORDER BY %v ASC, id ASC LIMIT $1`,
-			sortColumn,
-		)
+		query =
+			"SELECT id, name, picture_url, firebase_id, provider, email_address, email_verified, " +
+				"FALSE AS has_previous_page, " +
+
+				"CASE " +
+				" WHEN ( " +
+				"  SELECT COUNT(*) " +
+				"  FROM ( " +
+				"   SELECT * FROM users " +
+				"   ORDER BY " + sortColumn + " ASC, id ASC LIMIT $1 + 1 " +
+				"  ) as np " +
+				" ) = $1 + 1 " +
+				"THEN TRUE ELSE FALSE " +
+				"END AS has_next_page " +
+
+				"FROM users " +
+				"ORDER BY " + sortColumn + " ASC, id ASC LIMIT $1"
+
 		rows, err = r.db.QueryContext(ctx, query, first)
 	} else {
-		query = fmt.Sprintf(
-			` SELECT id, name, picture_url, firebase_id, provider, email_address, email_verified
-			  FROM users
-			  WHERE %[1]v >= (SELECT %[1]v FROM users WHERE id = $2 )
-					AND id != $2
-					AND id NOT IN (
-				  	SELECT id FROM users
-				  	WHERE %[1]v = (SELECT %[1]v FROM users WHERE id = $2)
-				  		AND id <= $2
-					)
-			  ORDER BY %[1]v ASC, id ASC LIMIT $1`,
-			sortColumn,
-		)
+		query =
+			"SELECT id, name, picture_url, firebase_id, provider, email_address, email_verified, " +
+				"CASE " +
+				" WHEN ( " +
+				"  SELECT COUNT(*) FROM users " +
+				"   WHERE " + sortColumn + " <= (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
+				"   AND id != $2 " +
+				"   AND id NOT IN " +
+				"    (SELECT id FROM users " +
+				"      WHERE " + sortColumn + " = (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
+				"      AND id >= $2 ) " +
+				" ) > 0 " +
+				"THEN TRUE ELSE FALSE " +
+				"END AS has_previous_page, " +
+
+				"CASE " +
+				" WHEN ( " +
+				"  SELECT COUNT(*) " +
+				"  FROM ( " +
+				"   SELECT * FROM users " +
+				"   WHERE " + sortColumn + " >= (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
+				"   AND id != $2 " +
+				"   ORDER BY " + sortColumn + " ASC, id ASC LIMIT $1 + 1 " +
+				"  ) as np " +
+				" ) = $1 + 1 " +
+				"THEN TRUE ELSE FALSE " +
+				"END AS has_next_page " +
+
+				"FROM users " +
+				"WHERE " + sortColumn + " >= (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
+				"AND id != $2 " +
+				"AND id NOT IN ( " +
+				" SELECT id FROM users " +
+				" WHERE " + sortColumn + " = (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
+				" AND id <= $2 " +
+				") " +
+				"ORDER BY " + sortColumn + " ASC, id ASC LIMIT $1"
 
 		rows, err = r.db.QueryContext(ctx, query, first, after)
 	}
@@ -220,20 +257,203 @@ func (r *UserRepository) FindFriends(ctx context.Context, first int, after entit
 	}
 	defer rows.Close()
 
-	var users []*model.User
+	var (
+		userFriendEdges []*entity.FriendsEdge
+		hasNextPage     bool
+		hasPreviousPage bool
+	)
 
 	for rows.Next() {
-		var user model.User
-		if err := rows.Scan(&user.ID, &user.Name, &user.FirebaseID, &user.Provider); err != nil {
+		var edge struct {
+			model.User
+			HasNextPage     bool `json:"has_next_page"`
+			HasPreviousPage bool `json:"has_previous_page"`
+		}
+
+		if err := rows.Scan(
+			&edge.ID,
+			&edge.Name,
+			&edge.PictureUrl,
+			&edge.FirebaseID,
+			&edge.Provider,
+			&edge.EmailAddress,
+			&edge.EmailVerified,
+			&edge.HasNextPage,
+			&edge.HasPreviousPage,
+		); err != nil {
 			return nil, err
 		}
 
-		users = append(users, &user)
+		hasNextPage = edge.HasNextPage
+		hasPreviousPage = edge.HasPreviousPage
+		user := model.ConvertModelUser(&edge.User)
+		userFriendEdges = append(userFriendEdges, &entity.FriendsEdge{
+			Node:   user,
+			Cursor: user.ID,
+		})
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return model.ConvertModelUsers(users), nil
+	if len(userFriendEdges) == 0 {
+		return &entity.FriendsConnection{}, nil
+	}
+
+	return &entity.FriendsConnection{
+		Edges: userFriendEdges,
+		PageInfo: &entity.PageInfo{
+			HasPreviousPage: hasPreviousPage,
+			HasNextPage:     hasNextPage,
+			StartCursor:     userFriendEdges[0].Cursor,
+			EndCursor:       userFriendEdges[len(userFriendEdges)-1].Cursor,
+		},
+		TotalCount: len(userFriendEdges),
+	}, nil
+}
+
+func (r *UserRepository) GetFriendIDsFromUserIDs(ctx context.Context,
+	inputs []entity.FriendsQueryInput) (map[entity.ID]*entity.IDsConnection, error) {
+	// TODO: find a better solution
+	res := make(map[entity.ID]*entity.IDsConnection)
+	for _, input := range inputs {
+		idsConnection, err := r.getFriendIDsFromUserID(ctx, input)
+		if err != nil {
+			return nil, fmt.Errorf("get friend ids from user: %w", err)
+		}
+
+		res[input.UserID] = idsConnection
+	}
+
+	return res, nil
+}
+
+func (r *UserRepository) getFriendIDsFromUserID(ctx context.Context,
+	input entity.FriendsQueryInput) (*entity.IDsConnection, error) {
+	if !entity.IsValidFriendsSortByType(string(input.SortBy)) {
+		return nil, fmt.Errorf("invalid sortBy: %v", input.SortBy)
+	}
+
+	sortColumn := model.GetColumnNameByFriendsSortByType(input.SortBy)
+	var (
+		query string
+		rows  *sql.Rows
+		err   error
+	)
+
+	if input.After == 0 {
+		query =
+			"SELECT id, " +
+				"FALSE AS has_previous_page, " +
+
+				"CASE " +
+				" WHEN ( " +
+				"  SELECT COUNT(*) " +
+				"  FROM ( " +
+				"   SELECT * FROM users " +
+				"   ORDER BY " + sortColumn + " ASC, id ASC LIMIT $1 + 1 " +
+				"  ) as np " +
+				" ) = $1 + 1 " +
+				"THEN TRUE ELSE FALSE " +
+				"END AS has_next_page " +
+
+				"FROM users " +
+				"ORDER BY " + sortColumn + " ASC, id ASC LIMIT $1"
+
+		rows, err = r.db.QueryContext(ctx, query, input.First)
+	} else {
+		query =
+			"SELECT id, " +
+				"CASE " +
+				" WHEN ( " +
+				"  SELECT COUNT(*) FROM users " +
+				"   WHERE " + sortColumn + " <= (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
+				"   AND id != $2 " +
+				"   AND id NOT IN " +
+				"    (SELECT id FROM users " +
+				"      WHERE " + sortColumn + " = (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
+				"      AND id >= $2 ) " +
+				" ) > 0 " +
+				"THEN TRUE ELSE FALSE " +
+				"END AS has_previous_page, " +
+
+				"CASE " +
+				" WHEN ( " +
+				"  SELECT COUNT(*) " +
+				"  FROM ( " +
+				"   SELECT * FROM users " +
+				"   WHERE " + sortColumn + " >= (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
+				"   AND id != $2 " +
+				"   ORDER BY " + sortColumn + " ASC, id ASC LIMIT $1 + 1 " +
+				"  ) as np " +
+				" ) = $1 + 1 " +
+				"THEN TRUE ELSE FALSE " +
+				"END AS has_next_page " +
+
+				"FROM users " +
+				"WHERE " + sortColumn + " >= (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
+				"AND id != $2 " +
+				"AND id NOT IN ( " +
+				" SELECT id FROM users " +
+				" WHERE " + sortColumn + " = (SELECT " + sortColumn + " FROM users WHERE id = $2 ) " +
+				" AND id <= $2 " +
+				") " +
+				"ORDER BY " + sortColumn + " ASC, id ASC LIMIT $1"
+
+		rows, err = r.db.QueryContext(ctx, query, input.First, input.After)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var (
+		idEdges         []*entity.IDsEdge
+		hasNextPage     bool
+		hasPreviousPage bool
+	)
+
+	for rows.Next() {
+		var edge struct {
+			ID              entity.ID `json:"id"`
+			HasNextPage     bool      `json:"has_next_page"`
+			HasPreviousPage bool      `json:"has_previous_page"`
+		}
+
+		if err := rows.Scan(
+			&edge.ID,
+			&edge.HasNextPage,
+			&edge.HasPreviousPage,
+		); err != nil {
+			return nil, err
+		}
+
+		hasNextPage = edge.HasNextPage
+		hasPreviousPage = edge.HasPreviousPage
+		idEdges = append(idEdges, &entity.IDsEdge{
+			Node:   edge.ID,
+			Cursor: edge.ID,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	if len(idEdges) == 0 {
+		return &entity.IDsConnection{}, nil
+	}
+
+	return &entity.IDsConnection{
+		Edges: idEdges,
+		PageInfo: &entity.PageInfo{
+			HasPreviousPage: hasPreviousPage,
+			HasNextPage:     hasNextPage,
+			StartCursor:     idEdges[0].Cursor,
+			EndCursor:       idEdges[len(idEdges)-1].Cursor,
+		},
+		TotalCount: len(idEdges),
+	}, nil
 }

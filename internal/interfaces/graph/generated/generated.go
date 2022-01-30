@@ -152,7 +152,7 @@ type ComplexityRoot struct {
 type ConversationResolver interface {
 	Creator(ctx context.Context, obj *entity.Conversation) (*entity.User, error)
 
-	Messages(ctx context.Context, obj *entity.Conversation, first int, after entity.ID) (*model.ConversationMessagesConnection, error)
+	Messages(ctx context.Context, obj *entity.Conversation, first int, after entity.ID) (*entity.ConversationMessagesConnection, error)
 	Participants(ctx context.Context, obj *entity.Conversation) ([]*entity.User, error)
 }
 type MessageResolver interface {
@@ -172,8 +172,8 @@ type SubscriptionResolver interface {
 	UserJoined(ctx context.Context) (<-chan *entity.User, error)
 }
 type UserResolver interface {
-	Friends(ctx context.Context, obj *entity.User, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) (*model.FriendsConnection, error)
-	Conversations(ctx context.Context, obj *entity.User, first int, after entity.ID) (*model.ConversationsConnection, error)
+	Friends(ctx context.Context, obj *entity.User, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) (*entity.FriendsConnection, error)
+	Conversations(ctx context.Context, obj *entity.User, first int, after entity.ID) (*entity.ConversationsConnection, error)
 }
 
 type executableSchema struct {
@@ -1265,9 +1265,9 @@ func (ec *executionContext) _Conversation_messages(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ConversationMessagesConnection)
+	res := resTmp.(*entity.ConversationMessagesConnection)
 	fc.Result = res
-	return ec.marshalNConversationMessagesConnection2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationMessagesConnection(ctx, field.Selections, res)
+	return ec.marshalNConversationMessagesConnection2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationMessagesConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Conversation_participants(ctx context.Context, field graphql.CollectedField, obj *entity.Conversation) (ret graphql.Marshaler) {
@@ -1305,7 +1305,7 @@ func (ec *executionContext) _Conversation_participants(ctx context.Context, fiel
 	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐUserᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ConversationMessagesConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.ConversationMessagesConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _ConversationMessagesConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *entity.ConversationMessagesConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1335,12 +1335,12 @@ func (ec *executionContext) _ConversationMessagesConnection_pageInfo(ctx context
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.PageInfo)
+	res := resTmp.(*entity.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ConversationMessagesConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.ConversationMessagesConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _ConversationMessagesConnection_edges(ctx context.Context, field graphql.CollectedField, obj *entity.ConversationMessagesConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1370,12 +1370,12 @@ func (ec *executionContext) _ConversationMessagesConnection_edges(ctx context.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.ConversationMessagesEdge)
+	res := resTmp.([]*entity.ConversationMessagesEdge)
 	fc.Result = res
-	return ec.marshalNConversationMessagesEdge2ᚕᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationMessagesEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalNConversationMessagesEdge2ᚕᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationMessagesEdgeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ConversationMessagesConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.ConversationMessagesConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _ConversationMessagesConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *entity.ConversationMessagesConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1410,7 +1410,7 @@ func (ec *executionContext) _ConversationMessagesConnection_totalCount(ctx conte
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ConversationMessagesEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.ConversationMessagesEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _ConversationMessagesEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *entity.ConversationMessagesEdge) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1445,7 +1445,7 @@ func (ec *executionContext) _ConversationMessagesEdge_cursor(ctx context.Context
 	return ec.marshalNID2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ConversationMessagesEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.ConversationMessagesEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _ConversationMessagesEdge_node(ctx context.Context, field graphql.CollectedField, obj *entity.ConversationMessagesEdge) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1480,7 +1480,7 @@ func (ec *executionContext) _ConversationMessagesEdge_node(ctx context.Context, 
 	return ec.marshalNMessage2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐMessage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ConversationsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.ConversationsConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _ConversationsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *entity.ConversationsConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1510,12 +1510,12 @@ func (ec *executionContext) _ConversationsConnection_pageInfo(ctx context.Contex
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.PageInfo)
+	res := resTmp.(*entity.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ConversationsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.ConversationsConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _ConversationsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *entity.ConversationsConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1545,12 +1545,12 @@ func (ec *executionContext) _ConversationsConnection_edges(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.ConversationsEdge)
+	res := resTmp.([]*entity.ConversationsEdge)
 	fc.Result = res
-	return ec.marshalNConversationsEdge2ᚕᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationsEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalNConversationsEdge2ᚕᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationsEdgeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ConversationsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.ConversationsConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _ConversationsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *entity.ConversationsConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1585,7 +1585,7 @@ func (ec *executionContext) _ConversationsConnection_totalCount(ctx context.Cont
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ConversationsEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.ConversationsEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _ConversationsEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *entity.ConversationsEdge) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1620,7 +1620,7 @@ func (ec *executionContext) _ConversationsEdge_cursor(ctx context.Context, field
 	return ec.marshalNID2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ConversationsEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.ConversationsEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _ConversationsEdge_node(ctx context.Context, field graphql.CollectedField, obj *entity.ConversationsEdge) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1690,7 +1690,7 @@ func (ec *executionContext) _CreateNewConversationPayload_conversation(ctx conte
 	return ec.marshalNConversation2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversation(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FriendsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *model.FriendsConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _FriendsConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *entity.FriendsConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1701,14 +1701,14 @@ func (ec *executionContext) _FriendsConnection_pageInfo(ctx context.Context, fie
 		Object:     "FriendsConnection",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
+		IsMethod:   false,
 		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PageInfo(), nil
+		return obj.PageInfo, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1720,12 +1720,12 @@ func (ec *executionContext) _FriendsConnection_pageInfo(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.PageInfo)
+	res := resTmp.(*entity.PageInfo)
 	fc.Result = res
-	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐPageInfo(ctx, field.Selections, res)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FriendsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *model.FriendsConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _FriendsConnection_edges(ctx context.Context, field graphql.CollectedField, obj *entity.FriendsConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1736,14 +1736,14 @@ func (ec *executionContext) _FriendsConnection_edges(ctx context.Context, field 
 		Object:     "FriendsConnection",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
+		IsMethod:   false,
 		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Edges()
+		return obj.Edges, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1755,12 +1755,12 @@ func (ec *executionContext) _FriendsConnection_edges(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.FriendsEdge)
+	res := resTmp.([]*entity.FriendsEdge)
 	fc.Result = res
-	return ec.marshalNFriendsEdge2ᚕᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐFriendsEdgeᚄ(ctx, field.Selections, res)
+	return ec.marshalNFriendsEdge2ᚕᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐFriendsEdgeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FriendsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.FriendsConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _FriendsConnection_totalCount(ctx context.Context, field graphql.CollectedField, obj *entity.FriendsConnection) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1771,14 +1771,14 @@ func (ec *executionContext) _FriendsConnection_totalCount(ctx context.Context, f
 		Object:     "FriendsConnection",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
+		IsMethod:   false,
 		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.TotalCount(), nil
+		return obj.TotalCount, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1795,7 +1795,7 @@ func (ec *executionContext) _FriendsConnection_totalCount(ctx context.Context, f
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FriendsEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *model.FriendsEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _FriendsEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *entity.FriendsEdge) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1830,7 +1830,7 @@ func (ec *executionContext) _FriendsEdge_cursor(ctx context.Context, field graph
 	return ec.marshalNID2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _FriendsEdge_node(ctx context.Context, field graphql.CollectedField, obj *model.FriendsEdge) (ret graphql.Marshaler) {
+func (ec *executionContext) _FriendsEdge_node(ctx context.Context, field graphql.CollectedField, obj *entity.FriendsEdge) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2258,7 +2258,7 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 	return ec.marshalNUser2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *entity.PageInfo) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2293,7 +2293,7 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 	return ec.marshalNID2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *entity.PageInfo) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2328,7 +2328,7 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 	return ec.marshalNID2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *entity.PageInfo) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2363,7 +2363,7 @@ func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *model.PageInfo) (ret graphql.Marshaler) {
+func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *entity.PageInfo) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2911,9 +2911,9 @@ func (ec *executionContext) _User_friends(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.FriendsConnection)
+	res := resTmp.(*entity.FriendsConnection)
 	fc.Result = res
-	return ec.marshalNFriendsConnection2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐFriendsConnection(ctx, field.Selections, res)
+	return ec.marshalNFriendsConnection2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐFriendsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_conversations(ctx context.Context, field graphql.CollectedField, obj *entity.User) (ret graphql.Marshaler) {
@@ -2953,9 +2953,9 @@ func (ec *executionContext) _User_conversations(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.ConversationsConnection)
+	res := resTmp.(*entity.ConversationsConnection)
 	fc.Result = res
-	return ec.marshalNConversationsConnection2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationsConnection(ctx, field.Selections, res)
+	return ec.marshalNConversationsConnection2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationsConnection(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -4207,7 +4207,7 @@ func (ec *executionContext) _Conversation(ctx context.Context, sel ast.Selection
 
 var conversationMessagesConnectionImplementors = []string{"ConversationMessagesConnection"}
 
-func (ec *executionContext) _ConversationMessagesConnection(ctx context.Context, sel ast.SelectionSet, obj *model.ConversationMessagesConnection) graphql.Marshaler {
+func (ec *executionContext) _ConversationMessagesConnection(ctx context.Context, sel ast.SelectionSet, obj *entity.ConversationMessagesConnection) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, conversationMessagesConnectionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4244,7 +4244,7 @@ func (ec *executionContext) _ConversationMessagesConnection(ctx context.Context,
 
 var conversationMessagesEdgeImplementors = []string{"ConversationMessagesEdge"}
 
-func (ec *executionContext) _ConversationMessagesEdge(ctx context.Context, sel ast.SelectionSet, obj *model.ConversationMessagesEdge) graphql.Marshaler {
+func (ec *executionContext) _ConversationMessagesEdge(ctx context.Context, sel ast.SelectionSet, obj *entity.ConversationMessagesEdge) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, conversationMessagesEdgeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4276,7 +4276,7 @@ func (ec *executionContext) _ConversationMessagesEdge(ctx context.Context, sel a
 
 var conversationsConnectionImplementors = []string{"ConversationsConnection"}
 
-func (ec *executionContext) _ConversationsConnection(ctx context.Context, sel ast.SelectionSet, obj *model.ConversationsConnection) graphql.Marshaler {
+func (ec *executionContext) _ConversationsConnection(ctx context.Context, sel ast.SelectionSet, obj *entity.ConversationsConnection) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, conversationsConnectionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4313,7 +4313,7 @@ func (ec *executionContext) _ConversationsConnection(ctx context.Context, sel as
 
 var conversationsEdgeImplementors = []string{"ConversationsEdge"}
 
-func (ec *executionContext) _ConversationsEdge(ctx context.Context, sel ast.SelectionSet, obj *model.ConversationsEdge) graphql.Marshaler {
+func (ec *executionContext) _ConversationsEdge(ctx context.Context, sel ast.SelectionSet, obj *entity.ConversationsEdge) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, conversationsEdgeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4372,7 +4372,7 @@ func (ec *executionContext) _CreateNewConversationPayload(ctx context.Context, s
 
 var friendsConnectionImplementors = []string{"FriendsConnection"}
 
-func (ec *executionContext) _FriendsConnection(ctx context.Context, sel ast.SelectionSet, obj *model.FriendsConnection) graphql.Marshaler {
+func (ec *executionContext) _FriendsConnection(ctx context.Context, sel ast.SelectionSet, obj *entity.FriendsConnection) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, friendsConnectionImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4409,7 +4409,7 @@ func (ec *executionContext) _FriendsConnection(ctx context.Context, sel ast.Sele
 
 var friendsEdgeImplementors = []string{"FriendsEdge"}
 
-func (ec *executionContext) _FriendsEdge(ctx context.Context, sel ast.SelectionSet, obj *model.FriendsEdge) graphql.Marshaler {
+func (ec *executionContext) _FriendsEdge(ctx context.Context, sel ast.SelectionSet, obj *entity.FriendsEdge) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, friendsEdgeImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -4556,7 +4556,7 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 var pageInfoImplementors = []string{"PageInfo"}
 
-func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *model.PageInfo) graphql.Marshaler {
+func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *entity.PageInfo) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, pageInfoImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -5048,11 +5048,11 @@ func (ec *executionContext) marshalNConversation2ᚖgithubᚗcomᚋsamthehaiᚋc
 	return ec._Conversation(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNConversationMessagesConnection2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationMessagesConnection(ctx context.Context, sel ast.SelectionSet, v model.ConversationMessagesConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNConversationMessagesConnection2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationMessagesConnection(ctx context.Context, sel ast.SelectionSet, v entity.ConversationMessagesConnection) graphql.Marshaler {
 	return ec._ConversationMessagesConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNConversationMessagesConnection2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationMessagesConnection(ctx context.Context, sel ast.SelectionSet, v *model.ConversationMessagesConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNConversationMessagesConnection2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationMessagesConnection(ctx context.Context, sel ast.SelectionSet, v *entity.ConversationMessagesConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5062,7 +5062,7 @@ func (ec *executionContext) marshalNConversationMessagesConnection2ᚖgithubᚗc
 	return ec._ConversationMessagesConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNConversationMessagesEdge2ᚕᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationMessagesEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ConversationMessagesEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNConversationMessagesEdge2ᚕᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationMessagesEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*entity.ConversationMessagesEdge) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -5086,7 +5086,7 @@ func (ec *executionContext) marshalNConversationMessagesEdge2ᚕᚖgithubᚗcom�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNConversationMessagesEdge2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationMessagesEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNConversationMessagesEdge2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationMessagesEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -5099,7 +5099,7 @@ func (ec *executionContext) marshalNConversationMessagesEdge2ᚕᚖgithubᚗcom�
 	return ret
 }
 
-func (ec *executionContext) marshalNConversationMessagesEdge2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationMessagesEdge(ctx context.Context, sel ast.SelectionSet, v *model.ConversationMessagesEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNConversationMessagesEdge2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationMessagesEdge(ctx context.Context, sel ast.SelectionSet, v *entity.ConversationMessagesEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5125,11 +5125,11 @@ func (ec *executionContext) marshalNConversationType2githubᚗcomᚋsamthehaiᚋ
 	return res
 }
 
-func (ec *executionContext) marshalNConversationsConnection2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationsConnection(ctx context.Context, sel ast.SelectionSet, v model.ConversationsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNConversationsConnection2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationsConnection(ctx context.Context, sel ast.SelectionSet, v entity.ConversationsConnection) graphql.Marshaler {
 	return ec._ConversationsConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNConversationsConnection2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationsConnection(ctx context.Context, sel ast.SelectionSet, v *model.ConversationsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNConversationsConnection2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationsConnection(ctx context.Context, sel ast.SelectionSet, v *entity.ConversationsConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5139,7 +5139,7 @@ func (ec *executionContext) marshalNConversationsConnection2ᚖgithubᚗcomᚋsa
 	return ec._ConversationsConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNConversationsEdge2ᚕᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationsEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ConversationsEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNConversationsEdge2ᚕᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationsEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*entity.ConversationsEdge) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -5163,7 +5163,7 @@ func (ec *executionContext) marshalNConversationsEdge2ᚕᚖgithubᚗcomᚋsamth
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNConversationsEdge2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationsEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNConversationsEdge2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationsEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -5176,7 +5176,7 @@ func (ec *executionContext) marshalNConversationsEdge2ᚕᚖgithubᚗcomᚋsamth
 	return ret
 }
 
-func (ec *executionContext) marshalNConversationsEdge2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐConversationsEdge(ctx context.Context, sel ast.SelectionSet, v *model.ConversationsEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNConversationsEdge2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationsEdge(ctx context.Context, sel ast.SelectionSet, v *entity.ConversationsEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5205,11 +5205,11 @@ func (ec *executionContext) marshalNCreateNewConversationPayload2ᚖgithubᚗcom
 	return ec._CreateNewConversationPayload(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNFriendsConnection2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐFriendsConnection(ctx context.Context, sel ast.SelectionSet, v model.FriendsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNFriendsConnection2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐFriendsConnection(ctx context.Context, sel ast.SelectionSet, v entity.FriendsConnection) graphql.Marshaler {
 	return ec._FriendsConnection(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNFriendsConnection2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐFriendsConnection(ctx context.Context, sel ast.SelectionSet, v *model.FriendsConnection) graphql.Marshaler {
+func (ec *executionContext) marshalNFriendsConnection2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐFriendsConnection(ctx context.Context, sel ast.SelectionSet, v *entity.FriendsConnection) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5219,7 +5219,7 @@ func (ec *executionContext) marshalNFriendsConnection2ᚖgithubᚗcomᚋsamtheha
 	return ec._FriendsConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNFriendsEdge2ᚕᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐFriendsEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FriendsEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNFriendsEdge2ᚕᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐFriendsEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*entity.FriendsEdge) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -5243,7 +5243,7 @@ func (ec *executionContext) marshalNFriendsEdge2ᚕᚖgithubᚗcomᚋsamthehai�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNFriendsEdge2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐFriendsEdge(ctx, sel, v[i])
+			ret[i] = ec.marshalNFriendsEdge2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐFriendsEdge(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -5256,7 +5256,7 @@ func (ec *executionContext) marshalNFriendsEdge2ᚕᚖgithubᚗcomᚋsamthehai�
 	return ret
 }
 
-func (ec *executionContext) marshalNFriendsEdge2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐFriendsEdge(ctx context.Context, sel ast.SelectionSet, v *model.FriendsEdge) graphql.Marshaler {
+func (ec *executionContext) marshalNFriendsEdge2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐFriendsEdge(ctx context.Context, sel ast.SelectionSet, v *entity.FriendsEdge) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5367,7 +5367,7 @@ func (ec *executionContext) marshalNMessageType2githubᚗcomᚋsamthehaiᚋchat�
 	return res
 }
 
-func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *model.PageInfo) graphql.Marshaler {
+func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *entity.PageInfo) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")

@@ -8,4 +8,7 @@ import (
 
 type UserUsecase interface {
 	Users(ctx context.Context, ids []entity.ID) ([]*entity.User, error)
+	GetFriendIDsFromUserIDs(ctx context.Context,
+		inputs []entity.FriendsQueryInput) (map[entity.ID]*entity.IDsConnection,
+		error)
 }

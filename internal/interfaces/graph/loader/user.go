@@ -10,14 +10,16 @@ import (
 )
 
 type UserLoader struct {
-	usersLoader *dataloader.Loader
+	usersLoader     *dataloader.Loader
+	friendIDsLoader *dataloader.Loader
 }
 
 func NewUserLoader(
 	userFetcher usecase.UserUsecase,
 ) *UserLoader {
 	return &UserLoader{
-		usersLoader: newUsersLoader(userFetcher.Users),
+		usersLoader:     newUsersLoader(userFetcher.Users),
+		friendIDsLoader: newFriendIDsLoader(userFetcher.GetFriendIDsFromUserIDs),
 	}
 }
 
@@ -31,6 +33,16 @@ func (l *UserLoader) LoadUser(
 	}
 
 	return raw.(*entity.User), nil
+}
+
+func (l *UserLoader) LoadFriendIDs(ctx context.Context,
+	input entity.FriendsQueryInput) (*entity.IDsConnection, error) {
+	raw, err := l.friendIDsLoader.Load(ctx, input)()
+	if err != nil {
+		return nil, fmt.Errorf("load friend ids: userid=%v, %w", input.UserID, err)
+	}
+
+	return raw.(*entity.IDsConnection), nil
 }
 
 func newUsersLoader(
@@ -53,6 +65,38 @@ func newUsersLoader(
 			results := make([]*dataloader.Result, 0, len(keys))
 			for _, id := range ids {
 				d := m[id]
+
+				results = append(results, &dataloader.Result{
+					Data:  d,
+					Error: err,
+				})
+			}
+
+			return results
+		},
+	)
+}
+
+func newFriendIDsLoader(
+	fetchFunc func(ctx context.Context, inputs []entity.FriendsQueryInput,
+	) (map[entity.ID]*entity.IDsConnection, error),
+) *dataloader.Loader {
+	return dataloader.NewBatchedLoader(
+		func(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
+			inputs := make([]entity.FriendsQueryInput, 0, len(keys))
+
+			for _, key := range keys {
+				inputs = append(inputs, key.Raw().(entity.FriendsQueryInput))
+			}
+
+			idsConnection, err := fetchFunc(ctx, inputs)
+			if err != nil {
+				return fillUpResultsWithError(len(keys), err)
+			}
+
+			results := make([]*dataloader.Result, 0, len(keys))
+			for _, input := range inputs {
+				d := idsConnection[input.UserID]
 
 				results = append(results, &dataloader.Result{
 					Data:  d,

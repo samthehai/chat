@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/samthehai/chat/internal/domain/entity"
-	"github.com/samthehai/chat/internal/interfaces/graph/model"
 	"github.com/samthehai/chat/internal/interfaces/graph/resolver/loader"
 )
 
@@ -41,7 +40,7 @@ func (r *ConversationResolver) Messages(
 	obj *entity.Conversation,
 	first int,
 	after entity.ID,
-) (*model.ConversationMessagesConnection, error) {
+) (*entity.ConversationMessagesConnection, error) {
 	// TODO
 	return nil, nil
 }
