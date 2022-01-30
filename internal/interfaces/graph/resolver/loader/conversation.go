@@ -7,8 +7,8 @@ import (
 )
 
 type ConversationLoader interface {
-	LoadConversation(
-		ctx context.Context,
-		conversationID entity.ID,
-	) (*entity.Conversation, error)
+	LoadConversation(ctx context.Context, conversationID entity.ID) (
+		*entity.Conversation, error)
+	LoadConversationIDsFromUser(ctx context.Context,
+		input entity.UserQueryInput) (*entity.IDsConnection, error)
 }

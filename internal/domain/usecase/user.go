@@ -125,7 +125,7 @@ func (u *UserUsecase) Users(ctx context.Context, ids []entity.ID) ([]*entity.Use
 
 func (u *UserUsecase) GetFriendIDsFromUserIDs(
 	ctx context.Context,
-	inputs []entity.FriendsQueryInput,
+	inputs []entity.UserQueryInput,
 ) (map[entity.ID]*entity.IDsConnection, error) {
 	users, err := u.userRepository.GetFriendIDsFromUserIDs(ctx, inputs)
 	if err != nil {

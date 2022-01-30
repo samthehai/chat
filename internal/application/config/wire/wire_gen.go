@@ -46,7 +46,7 @@ func InitializeServer() (server.Server, func(), error) {
 	messageResolver := resolver.NewMessageResolver(userLoader, conversationLoader)
 	messageLoader := loader.NewMessageLoader(messageUsecase)
 	conversationResolver := resolver.NewConversationResolver(messageLoader, userLoader)
-	userResolver := resolver.NewUserResolver(userLoader)
+	userResolver := resolver.NewUserResolver(userLoader, conversationLoader)
 	resolverResolver := resolver.NewResolver(queryResolver, mutationResolver, subscriptionResolver, messageResolver, conversationResolver, userResolver)
 	string2 := proviveFirebaseCredentials()
 	firebaseClient, err := auth.NewFirebaseClient(context, string2)

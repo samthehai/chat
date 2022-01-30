@@ -266,3 +266,154 @@ func (s *MessageRepository) FanoutMessage(
 	}
 	s.mutex.RUnlock()
 }
+
+func (r *MessageRepository) FindConversationIDsFromUserIDs(ctx context.Context,
+	inputs []entity.UserQueryInput) (map[entity.ID]*entity.IDsConnection, error) {
+	// TODO: find a better solution
+	res := make(map[entity.ID]*entity.IDsConnection)
+	for _, input := range inputs {
+		idsConnection, err := r.getConversationIDsFromUserID(ctx, input)
+		if err != nil {
+			return nil, fmt.Errorf("get conversation ids from user: %w", err)
+		}
+
+		res[input.UserID] = idsConnection
+	}
+
+	return res, nil
+}
+
+func (r *MessageRepository) getConversationIDsFromUserID(ctx context.Context,
+	input entity.UserQueryInput) (*entity.IDsConnection, error) {
+	if !entity.IsValidConversationsSortByType(string(input.SortBy)) {
+		return nil, fmt.Errorf("invalid sortBy: %v", input.SortBy)
+	}
+
+	sortColumn := model.GetColumnNameByConversationsSortByType(
+		entity.ConversationsSortByType(input.SortBy))
+	var (
+		query string
+		rows  *sql.Rows
+		err   error
+	)
+
+	if input.After == 0 {
+		query =
+			"SELECT conversation_id, " +
+				"FALSE AS has_previous_page, " +
+
+				"CASE " +
+				" WHEN ( " +
+				"  SELECT COUNT(*) " +
+				"  FROM ( " +
+				"   SELECT * FROM participants " +
+				"   WHERE user_id = $1 " +
+				"   ORDER BY " + sortColumn + " ASC, id ASC LIMIT $2 + 1 " +
+				"  ) as np " +
+				" ) = $2 + 1 " +
+				"THEN TRUE ELSE FALSE " +
+				"END AS has_next_page " +
+
+				"FROM participants " +
+				"WHERE user_id = $1 " +
+				"ORDER BY " + sortColumn + " ASC, id ASC LIMIT $2"
+
+		rows, err = r.db.QueryContext(ctx, query, input.UserID, input.First)
+	} else {
+		query =
+			"SELECT id, " +
+				"CASE " +
+				" WHEN ( " +
+				"  SELECT COUNT(*) FROM participants " +
+				"   WHERE " + sortColumn + " <= (SELECT " + sortColumn + " FROM participants WHERE id = $3) " +
+				"   AND id != $3 " +
+				"   AND id NOT IN " +
+				"    (SELECT id FROM participants " +
+				"      WHERE " + sortColumn + " = (SELECT " + sortColumn + " FROM participants WHERE id = $3 ) " +
+				"      AND id >= $3 ) " +
+				"   AND user_id = $1 " +
+				" ) > 0 " +
+				"THEN TRUE ELSE FALSE " +
+				"END AS has_previous_page, " +
+
+				"CASE " +
+				" WHEN ( " +
+				"  SELECT COUNT(*) " +
+				"  FROM ( " +
+				"   SELECT * FROM participants " +
+				"   WHERE " + sortColumn + " >= (SELECT " + sortColumn + " FROM participants WHERE id = $3 ) " +
+				"   AND id != $3 " +
+				"   AND user_id = $1 " +
+				"   ORDER BY " + sortColumn + " ASC, id ASC LIMIT $2 + 1 " +
+				"  ) as np " +
+				" ) = $2 + 1 " +
+				"THEN TRUE ELSE FALSE " +
+				"END AS has_next_page " +
+
+				"FROM participants " +
+				"WHERE " + sortColumn + " >= (SELECT " + sortColumn + " FROM participants WHERE id = $3 ) " +
+				"AND id != $3 " +
+				"AND id NOT IN ( " +
+				" SELECT id FROM participants " +
+				" WHERE " + sortColumn + " = (SELECT " + sortColumn + " FROM participants WHERE id = $3 ) " +
+				" AND id <= $3 " +
+				") " +
+				"AND user_id = $1 " +
+				"ORDER BY " + sortColumn + " ASC, id ASC LIMIT $2"
+
+		rows, err = r.db.QueryContext(ctx, query, input.UserID, input.First, input.After)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var (
+		idEdges         []*entity.IDsEdge
+		hasNextPage     bool
+		hasPreviousPage bool
+	)
+
+	for rows.Next() {
+		var edge struct {
+			ID              entity.ID `json:"id"`
+			HasNextPage     bool      `json:"has_next_page"`
+			HasPreviousPage bool      `json:"has_previous_page"`
+		}
+
+		if err := rows.Scan(
+			&edge.ID,
+			&edge.HasNextPage,
+			&edge.HasPreviousPage,
+		); err != nil {
+			return nil, err
+		}
+
+		hasNextPage = edge.HasNextPage
+		hasPreviousPage = edge.HasPreviousPage
+		idEdges = append(idEdges, &entity.IDsEdge{
+			Node:   edge.ID,
+			Cursor: edge.ID,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	if len(idEdges) == 0 {
+		return &entity.IDsConnection{}, nil
+	}
+
+	return &entity.IDsConnection{
+		Edges: idEdges,
+		PageInfo: &entity.PageInfo{
+			HasPreviousPage: hasPreviousPage,
+			HasNextPage:     hasNextPage,
+			StartCursor:     idEdges[0].Cursor,
+			EndCursor:       idEdges[len(idEdges)-1].Cursor,
+		},
+		TotalCount: len(idEdges),
+	}, nil
+}

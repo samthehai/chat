@@ -12,5 +12,5 @@ type UserLoader interface {
 		userID entity.ID,
 	) (*entity.User, error)
 	LoadFriendIDs(ctx context.Context,
-		input entity.FriendsQueryInput) (*entity.IDsConnection, error)
+		input entity.UserQueryInput) (*entity.IDsConnection, error)
 }

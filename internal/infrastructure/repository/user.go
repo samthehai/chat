@@ -314,7 +314,7 @@ func (r *UserRepository) FindFriends(ctx context.Context, first int, after entit
 }
 
 func (r *UserRepository) GetFriendIDsFromUserIDs(ctx context.Context,
-	inputs []entity.FriendsQueryInput) (map[entity.ID]*entity.IDsConnection, error) {
+	inputs []entity.UserQueryInput) (map[entity.ID]*entity.IDsConnection, error) {
 	// TODO: find a better solution
 	res := make(map[entity.ID]*entity.IDsConnection)
 	for _, input := range inputs {
@@ -330,12 +330,13 @@ func (r *UserRepository) GetFriendIDsFromUserIDs(ctx context.Context,
 }
 
 func (r *UserRepository) getFriendIDsFromUserID(ctx context.Context,
-	input entity.FriendsQueryInput) (*entity.IDsConnection, error) {
+	input entity.UserQueryInput) (*entity.IDsConnection, error) {
 	if !entity.IsValidFriendsSortByType(string(input.SortBy)) {
 		return nil, fmt.Errorf("invalid sortBy: %v", input.SortBy)
 	}
 
-	sortColumn := model.GetColumnNameByFriendsSortByType(input.SortBy)
+	sortColumn := model.GetColumnNameByFriendsSortByType(
+		entity.FriendsSortByType(input.SortBy))
 	var (
 		query string
 		rows  *sql.Rows

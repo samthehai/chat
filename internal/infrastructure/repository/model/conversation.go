@@ -45,3 +45,12 @@ func ConvertModelConversations(input []*Conversation) []*entity.Conversation {
 
 	return cc
 }
+
+func GetColumnNameByConversationsSortByType(t entity.ConversationsSortByType) string {
+	switch t {
+	case entity.ConversationsSortByTypeUpdatedAt:
+		return "updated_at"
+	default:
+		return ""
+	}
+}

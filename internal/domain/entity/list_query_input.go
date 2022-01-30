@@ -3,6 +3,6 @@ package entity
 type ListQueryInput struct {
 	First     int
 	After     ID
-	SortBy    FriendsSortByType
+	SortBy    string
 	SortOrder SortOrderType
 }

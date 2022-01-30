@@ -36,7 +36,7 @@ func (l *UserLoader) LoadUser(
 }
 
 func (l *UserLoader) LoadFriendIDs(ctx context.Context,
-	input entity.FriendsQueryInput) (*entity.IDsConnection, error) {
+	input entity.UserQueryInput) (*entity.IDsConnection, error) {
 	raw, err := l.friendIDsLoader.Load(ctx, input)()
 	if err != nil {
 		return nil, fmt.Errorf("load friend ids: userid=%v, %w", input.UserID, err)
@@ -78,15 +78,15 @@ func newUsersLoader(
 }
 
 func newFriendIDsLoader(
-	fetchFunc func(ctx context.Context, inputs []entity.FriendsQueryInput,
+	fetchFunc func(ctx context.Context, inputs []entity.UserQueryInput,
 	) (map[entity.ID]*entity.IDsConnection, error),
 ) *dataloader.Loader {
 	return dataloader.NewBatchedLoader(
 		func(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
-			inputs := make([]entity.FriendsQueryInput, 0, len(keys))
+			inputs := make([]entity.UserQueryInput, 0, len(keys))
 
 			for _, key := range keys {
-				inputs = append(inputs, key.Raw().(entity.FriendsQueryInput))
+				inputs = append(inputs, key.Raw().(entity.UserQueryInput))
 			}
 
 			idsConnection, err := fetchFunc(ctx, inputs)

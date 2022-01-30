@@ -121,3 +121,15 @@ func (u *MessageUsecase) Conversations(ctx context.Context) ([]*entity.Conversat
 	// TODO:
 	return nil, nil
 }
+
+func (u *MessageUsecase) GetConversationIDsFromUserIDs(
+	ctx context.Context,
+	inputs []entity.UserQueryInput,
+) (map[entity.ID]*entity.IDsConnection, error) {
+	users, err := u.messageRepository.FindConversationIDsFromUserIDs(ctx, inputs)
+	if err != nil {
+		return nil, fmt.Errorf("find conversation ids from user ids: %w", err)
+	}
+
+	return users, nil
+}
