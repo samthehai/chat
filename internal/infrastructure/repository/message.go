@@ -236,6 +236,62 @@ func (r *MessageRepository) FindMessagesInConversations(
 	return result, nil
 }
 
+func (r *MessageRepository) FindParticipantsInConversations(ctx context.Context,
+	conversationIDs []entity.ID) (map[entity.ID][]*entity.User, error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT u.id, u.name, u.picture_url, u.firebase_id, u.provider, u.email_address, u.email_verified, p.conversation_id
+		 FROM users AS u
+		 INNER JOIN participants AS p ON u.id = p.user_id
+		 WHERE p.conversation_id = ANY($1)`,
+		pq.Array(conversationIDs),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	type participantWithConversationID struct {
+		ConversationID entity.ID
+		User           model.User
+	}
+
+	var participants []participantWithConversationID
+
+	for rows.Next() {
+		var participant participantWithConversationID
+		if err := rows.Scan(
+			&participant.User.ID,
+			&participant.User.Name,
+			&participant.User.PictureUrl,
+			&participant.User.FirebaseID,
+			&participant.User.Provider,
+			&participant.User.EmailAddress,
+			&participant.User.EmailVerified,
+			&participant.ConversationID,
+		); err != nil {
+			return nil, err
+		}
+
+		participants = append(participants, participant)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	result := make(map[entity.ID][]*entity.User)
+	for _, p := range participants {
+		if _, ok := result[p.ConversationID]; !ok {
+			result[p.ConversationID] = make([]*entity.User, 0)
+		}
+
+		result[p.ConversationID] = append(result[p.ConversationID], model.ConvertModelUser(&p.User))
+	}
+
+	return result, nil
+}
+
 func (s *MessageRepository) MessagePosted(
 	ctx context.Context,
 	input entity.User,
@@ -402,17 +458,11 @@ func (r *MessageRepository) getConversationIDsFromUserID(ctx context.Context,
 		return nil, err
 	}
 
-	if len(idEdges) == 0 {
-		return &entity.IDsConnection{}, nil
-	}
-
 	return &entity.IDsConnection{
 		Edges: idEdges,
 		PageInfo: &entity.PageInfo{
 			HasPreviousPage: hasPreviousPage,
 			HasNextPage:     hasNextPage,
-			StartCursor:     idEdges[0].Cursor,
-			EndCursor:       idEdges[len(idEdges)-1].Cursor,
 		},
 		TotalCount: len(idEdges),
 	}, nil

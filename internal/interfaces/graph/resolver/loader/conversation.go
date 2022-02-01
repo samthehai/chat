@@ -11,4 +11,6 @@ type ConversationLoader interface {
 		*entity.Conversation, error)
 	LoadConversationIDsFromUser(ctx context.Context,
 		input entity.UserQueryInput) (*entity.IDsConnection, error)
+	LoadParticipantsInConversation(ctx context.Context,
+		conversationID entity.ID) ([]*entity.User, error)
 }

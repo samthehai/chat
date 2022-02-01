@@ -13,4 +13,6 @@ type MessageUsecase interface {
 		[]*entity.Conversation, error)
 	GetConversationIDsFromUserIDs(ctx context.Context,
 		inputs []entity.UserQueryInput) (map[entity.ID]*entity.IDsConnection, error)
+	GetParticipantsInConversations(ctx context.Context,
+		conversationIDs []entity.ID) (map[entity.ID][]*entity.User, error)
 }

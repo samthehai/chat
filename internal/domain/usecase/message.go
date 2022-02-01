@@ -133,3 +133,13 @@ func (u *MessageUsecase) GetConversationIDsFromUserIDs(
 
 	return users, nil
 }
+
+func (u *MessageUsecase) GetParticipantsInConversations(ctx context.Context,
+	conversationIDs []entity.ID) (map[entity.ID][]*entity.User, error) {
+	participants, err := u.messageRepository.FindParticipantsInConversations(ctx, conversationIDs)
+	if err != nil {
+		return nil, fmt.Errorf("find participants in conversations: %w", err)
+	}
+
+	return participants, nil
+}

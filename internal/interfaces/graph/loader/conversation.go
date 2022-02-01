@@ -10,8 +10,9 @@ import (
 )
 
 type ConversationLoader struct {
-	conversationLoader    *dataloader.Loader
-	conversationIDsLoader *dataloader.Loader
+	conversationLoader          *dataloader.Loader
+	conversationIDsLoader       *dataloader.Loader
+	participantsInConversations *dataloader.Loader
 }
 
 func NewConversationLoader(
@@ -22,6 +23,8 @@ func NewConversationLoader(
 			messageUsecase.ConversationByIDs),
 		conversationIDsLoader: newConversationIDsLoader(
 			messageUsecase.GetConversationIDsFromUserIDs),
+		participantsInConversations: newParticipantsInConversationsLoader(
+			messageUsecase.GetParticipantsInConversations),
 	}
 }
 
@@ -45,6 +48,22 @@ func (l *ConversationLoader) LoadConversationIDsFromUser(ctx context.Context,
 	}
 
 	return raw.(*entity.IDsConnection), nil
+}
+
+func (l *ConversationLoader) LoadParticipantsInConversation(ctx context.Context,
+	conversationID entity.ID) ([]*entity.User, error) {
+	raw, err := l.participantsInConversations.Load(ctx, conversationID)()
+	if err != nil {
+		return nil, fmt.Errorf("load participants in conversation: id=%v, %w",
+			conversationID, err)
+	}
+
+	v, ok := raw.([]*entity.User)
+	if !ok {
+		return nil, fmt.Errorf("invalid user data")
+	}
+
+	return v, nil
 }
 
 func newConversationLoader(
@@ -100,6 +119,34 @@ func newConversationIDsLoader(
 			results := make([]*dataloader.Result, 0, len(keys))
 			for _, input := range inputs {
 				d := idsConnection[input.UserID]
+
+				results = append(results, &dataloader.Result{
+					Data:  d,
+					Error: err,
+				})
+			}
+
+			return results
+		},
+	)
+}
+
+func newParticipantsInConversationsLoader(
+	fetchFunc func(ctx context.Context,
+		conversationIDs []entity.ID) (map[entity.ID][]*entity.User, error),
+) *dataloader.Loader {
+	return dataloader.NewBatchedLoader(
+		func(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
+			ids := getIDsFromKeys(keys)
+
+			participants, err := fetchFunc(ctx, ids)
+			if err != nil {
+				return fillUpResultsWithError(len(keys), err)
+			}
+
+			results := make([]*dataloader.Result, 0, len(keys))
+			for _, id := range ids {
+				d := participants[id]
 
 				results = append(results, &dataloader.Result{
 					Data:  d,

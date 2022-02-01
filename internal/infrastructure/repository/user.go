@@ -297,17 +297,11 @@ func (r *UserRepository) FindFriends(ctx context.Context, first int, after entit
 		return nil, err
 	}
 
-	if len(userFriendEdges) == 0 {
-		return &entity.FriendsConnection{}, nil
-	}
-
 	return &entity.FriendsConnection{
 		Edges: userFriendEdges,
 		PageInfo: &entity.PageInfo{
 			HasPreviousPage: hasPreviousPage,
 			HasNextPage:     hasNextPage,
-			StartCursor:     userFriendEdges[0].Cursor,
-			EndCursor:       userFriendEdges[len(userFriendEdges)-1].Cursor,
 		},
 		TotalCount: len(userFriendEdges),
 	}, nil
@@ -443,17 +437,11 @@ func (r *UserRepository) getFriendIDsFromUserID(ctx context.Context,
 		return nil, err
 	}
 
-	if len(idEdges) == 0 {
-		return &entity.IDsConnection{}, nil
-	}
-
 	return &entity.IDsConnection{
 		Edges: idEdges,
 		PageInfo: &entity.PageInfo{
 			HasPreviousPage: hasPreviousPage,
 			HasNextPage:     hasNextPage,
-			StartCursor:     idEdges[0].Cursor,
-			EndCursor:       idEdges[len(idEdges)-1].Cursor,
 		},
 		TotalCount: len(idEdges),
 	}, nil

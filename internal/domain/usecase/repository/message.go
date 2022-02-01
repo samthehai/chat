@@ -39,4 +39,6 @@ type MessageRepository interface {
 	)
 	FindConversationIDsFromUserIDs(ctx context.Context,
 		inputs []entity.UserQueryInput) (map[entity.ID]*entity.IDsConnection, error)
+	FindParticipantsInConversations(ctx context.Context,
+		conversationIDs []entity.ID) (map[entity.ID][]*entity.User, error)
 }

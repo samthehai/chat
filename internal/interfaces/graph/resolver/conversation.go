@@ -9,17 +9,20 @@ import (
 )
 
 type ConversationResolver struct {
-	messageLoader loader.MessageLoader
-	userLoader    loader.UserLoader
+	messageLoader      loader.MessageLoader
+	userLoader         loader.UserLoader
+	conversationLoader loader.ConversationLoader
 }
 
 func NewConversationResolver(
 	messageLoader loader.MessageLoader,
 	userLoader loader.UserLoader,
+	conversationLoader loader.ConversationLoader,
 ) *ConversationResolver {
 	return &ConversationResolver{
-		messageLoader: messageLoader,
-		userLoader:    userLoader,
+		messageLoader:      messageLoader,
+		userLoader:         userLoader,
+		conversationLoader: conversationLoader,
 	}
 }
 
@@ -49,6 +52,10 @@ func (r *ConversationResolver) Participants(
 	ctx context.Context,
 	obj *entity.Conversation,
 ) ([]*entity.User, error) {
-	// TODO
-	return nil, nil
+	pp, err := r.conversationLoader.LoadParticipantsInConversation(ctx, obj.ID)
+	if err != nil {
+		return nil, fmt.Errorf("load participants in conversation: %w", err)
+	}
+
+	return pp, nil
 }
