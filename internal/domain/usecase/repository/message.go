@@ -25,7 +25,7 @@ type MessageRepository interface {
 		senderID entity.ID,
 		msg string,
 	) (*entity.Message, error)
-	FindMessagesInConversations(
+	FindAllMessagesInConversations(
 		ctx context.Context,
 		conversationIDs []entity.ID,
 	) (map[entity.ID][]*entity.Message, error)
@@ -37,4 +37,11 @@ type MessageRepository interface {
 		ctx context.Context,
 		message *entity.Message,
 	)
+	FindConversationIDsFromUserIDs(ctx context.Context,
+		inputs []entity.RelayQueryInput) (map[entity.ID]*entity.IDsConnection, error)
+	FindParticipantsInConversations(ctx context.Context,
+		conversationIDs []entity.ID) (map[entity.ID][]*entity.User, error)
+	FindMessagesInConversations(ctx context.Context,
+		inputs []entity.RelayQueryInput,
+	) (map[entity.ID]*entity.ConversationMessagesConnection, error)
 }

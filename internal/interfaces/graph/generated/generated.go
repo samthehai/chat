@@ -55,7 +55,7 @@ type ComplexityRoot struct {
 		Creator      func(childComplexity int) int
 		DeletedAt    func(childComplexity int) int
 		ID           func(childComplexity int) int
-		Messages     func(childComplexity int, first int, after entity.ID) int
+		Messages     func(childComplexity int, first int, after entity.ID, sortBy entity.MessagesSortByType, sortOrder entity.SortOrderType) int
 		Participants func(childComplexity int) int
 		Title        func(childComplexity int) int
 		Type         func(childComplexity int) int
@@ -117,10 +117,8 @@ type ComplexityRoot struct {
 	}
 
 	PageInfo struct {
-		EndCursor       func(childComplexity int) int
 		HasNextPage     func(childComplexity int) int
 		HasPreviousPage func(childComplexity int) int
-		StartCursor     func(childComplexity int) int
 	}
 
 	PostMessagePayload struct {
@@ -137,7 +135,7 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Conversations func(childComplexity int, first int, after entity.ID) int
+		Conversations func(childComplexity int, first int, after entity.ID, sortBy entity.ConversationsSortByType, sortOrder entity.SortOrderType) int
 		EmailAddress  func(childComplexity int) int
 		EmailVerified func(childComplexity int) int
 		FirebaseID    func(childComplexity int) int
@@ -152,7 +150,7 @@ type ComplexityRoot struct {
 type ConversationResolver interface {
 	Creator(ctx context.Context, obj *entity.Conversation) (*entity.User, error)
 
-	Messages(ctx context.Context, obj *entity.Conversation, first int, after entity.ID) (*entity.ConversationMessagesConnection, error)
+	Messages(ctx context.Context, obj *entity.Conversation, first int, after entity.ID, sortBy entity.MessagesSortByType, sortOrder entity.SortOrderType) (*entity.ConversationMessagesConnection, error)
 	Participants(ctx context.Context, obj *entity.Conversation) ([]*entity.User, error)
 }
 type MessageResolver interface {
@@ -173,7 +171,7 @@ type SubscriptionResolver interface {
 }
 type UserResolver interface {
 	Friends(ctx context.Context, obj *entity.User, first int, after entity.ID, sortBy entity.FriendsSortByType, sortOrder entity.SortOrderType) (*entity.FriendsConnection, error)
-	Conversations(ctx context.Context, obj *entity.User, first int, after entity.ID) (*entity.ConversationsConnection, error)
+	Conversations(ctx context.Context, obj *entity.User, first int, after entity.ID, sortBy entity.ConversationsSortByType, sortOrder entity.SortOrderType) (*entity.ConversationsConnection, error)
 }
 
 type executableSchema struct {
@@ -229,7 +227,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Conversation.Messages(childComplexity, args["first"].(int), args["after"].(entity.ID)), true
+		return e.complexity.Conversation.Messages(childComplexity, args["first"].(int), args["after"].(entity.ID), args["sortBy"].(entity.MessagesSortByType), args["sortOrder"].(entity.SortOrderType)), true
 
 	case "Conversation.participants":
 		if e.complexity.Conversation.Participants == nil {
@@ -458,13 +456,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.PostMessage(childComplexity, args["input"].(model.PostMessageInput)), true
 
-	case "PageInfo.endCursor":
-		if e.complexity.PageInfo.EndCursor == nil {
-			break
-		}
-
-		return e.complexity.PageInfo.EndCursor(childComplexity), true
-
 	case "PageInfo.hasNextPage":
 		if e.complexity.PageInfo.HasNextPage == nil {
 			break
@@ -478,13 +469,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PageInfo.HasPreviousPage(childComplexity), true
-
-	case "PageInfo.startCursor":
-		if e.complexity.PageInfo.StartCursor == nil {
-			break
-		}
-
-		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
 	case "PostMessagePayload.message":
 		if e.complexity.PostMessagePayload.Message == nil {
@@ -524,7 +508,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.User.Conversations(childComplexity, args["first"].(int), args["after"].(entity.ID)), true
+		return e.complexity.User.Conversations(childComplexity, args["first"].(int), args["after"].(entity.ID), args["sortBy"].(entity.ConversationsSortByType), args["sortOrder"].(entity.SortOrderType)), true
 
 	case "User.emailAddress":
 		if e.complexity.User.EmailAddress == nil {
@@ -669,8 +653,6 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "internal/interfaces/graph/schemas/connections.graphqls", Input: `type PageInfo {
-  startCursor: ID!
-  endCursor: ID!
   hasPreviousPage: Boolean!
   hasNextPage: Boolean!
 }
@@ -724,7 +706,12 @@ type ConversationMessagesEdge {
     sortOrder: SortOrderType! = SORT_ORDER_ASC
   ): FriendsConnection!
   # conversations of user, relay loading
-  conversations(first: Int!, after: ID!): ConversationsConnection!
+  conversations(
+    first: Int!
+    after: ID!
+    sortBy: ConversationsSortByType! = CONVERSATIONS_SORT_BY_UPDATED_AT
+    sortOrder: SortOrderType! = SORT_ORDER_ASC
+  ): ConversationsConnection!
 }
 
 type Message {
@@ -747,7 +734,12 @@ type Conversation {
   updatedAt: Time!
   deletedAt: Time
   # messages in conversation, relay loading
-  messages(first: Int! = 10, after: ID! = 0): ConversationMessagesConnection!
+  messages(
+    first: Int! = 10
+    after: ID! = 0
+    sortBy: MessagesSortByType! = MESSAGES_SORT_BY_CREATED_AT
+    sortOrder: SortOrderType! = SORT_ORDER_ASC
+  ): ConversationMessagesConnection!
   # participants in conversation, relay loading
   participants: [User!]!
 }
@@ -768,6 +760,14 @@ enum MessageType {
 enum ConversationType {
   SINGLE
   GROUP
+}
+
+enum ConversationsSortByType {
+  CONVERSATIONS_SORT_BY_UPDATED_AT
+}
+
+enum MessagesSortByType {
+  MESSAGES_SORT_BY_CREATED_AT
 }
 `, BuiltIn: false},
 	{Name: "internal/interfaces/graph/schemas/inputs.graphqls", Input: `input CreateNewConversationInput {
@@ -837,6 +837,24 @@ func (ec *executionContext) field_Conversation_messages_args(ctx context.Context
 		}
 	}
 	args["after"] = arg1
+	var arg2 entity.MessagesSortByType
+	if tmp, ok := rawArgs["sortBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortBy"))
+		arg2, err = ec.unmarshalNMessagesSortByType2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐMessagesSortByType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sortBy"] = arg2
+	var arg3 entity.SortOrderType
+	if tmp, ok := rawArgs["sortOrder"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortOrder"))
+		arg3, err = ec.unmarshalNSortOrderType2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐSortOrderType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sortOrder"] = arg3
 	return args, nil
 }
 
@@ -906,6 +924,24 @@ func (ec *executionContext) field_User_conversations_args(ctx context.Context, r
 		}
 	}
 	args["after"] = arg1
+	var arg2 entity.ConversationsSortByType
+	if tmp, ok := rawArgs["sortBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortBy"))
+		arg2, err = ec.unmarshalNConversationsSortByType2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationsSortByType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sortBy"] = arg2
+	var arg3 entity.SortOrderType
+	if tmp, ok := rawArgs["sortOrder"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sortOrder"))
+		arg3, err = ec.unmarshalNSortOrderType2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐSortOrderType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sortOrder"] = arg3
 	return args, nil
 }
 
@@ -1253,7 +1289,7 @@ func (ec *executionContext) _Conversation_messages(ctx context.Context, field gr
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Conversation().Messages(rctx, obj, args["first"].(int), args["after"].(entity.ID))
+		return ec.resolvers.Conversation().Messages(rctx, obj, args["first"].(int), args["after"].(entity.ID), args["sortBy"].(entity.MessagesSortByType), args["sortOrder"].(entity.SortOrderType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2258,76 +2294,6 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 	return ec.marshalNUser2ᚖgithubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *entity.PageInfo) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PageInfo",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.StartCursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entity.ID)
-	fc.Result = res
-	return ec.marshalNID2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐID(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *entity.PageInfo) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PageInfo",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.EndCursor, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(entity.ID)
-	fc.Result = res
-	return ec.marshalNID2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐID(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *entity.PageInfo) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2941,7 +2907,7 @@ func (ec *executionContext) _User_conversations(ctx context.Context, field graph
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.User().Conversations(rctx, obj, args["first"].(int), args["after"].(entity.ID))
+		return ec.resolvers.User().Conversations(rctx, obj, args["first"].(int), args["after"].(entity.ID), args["sortBy"].(entity.ConversationsSortByType), args["sortOrder"].(entity.SortOrderType))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4565,16 +4531,6 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("PageInfo")
-		case "startCursor":
-			out.Values[i] = ec._PageInfo_startCursor(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "endCursor":
-			out.Values[i] = ec._PageInfo_endCursor(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "hasPreviousPage":
 			out.Values[i] = ec._PageInfo_hasPreviousPage(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -5186,6 +5142,22 @@ func (ec *executionContext) marshalNConversationsEdge2ᚖgithubᚗcomᚋsamtheha
 	return ec._ConversationsEdge(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNConversationsSortByType2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationsSortByType(ctx context.Context, v interface{}) (entity.ConversationsSortByType, error) {
+	tmp, err := graphql.UnmarshalString(v)
+	res := entity.ConversationsSortByType(tmp)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNConversationsSortByType2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐConversationsSortByType(ctx context.Context, sel ast.SelectionSet, v entity.ConversationsSortByType) graphql.Marshaler {
+	res := graphql.MarshalString(string(v))
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNCreateNewConversationInput2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋinterfacesᚋgraphᚋmodelᚐCreateNewConversationInput(ctx context.Context, v interface{}) (model.CreateNewConversationInput, error) {
 	res, err := ec.unmarshalInputCreateNewConversationInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -5358,6 +5330,22 @@ func (ec *executionContext) unmarshalNMessageType2githubᚗcomᚋsamthehaiᚋcha
 }
 
 func (ec *executionContext) marshalNMessageType2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐMessageType(ctx context.Context, sel ast.SelectionSet, v entity.MessageType) graphql.Marshaler {
+	res := graphql.MarshalString(string(v))
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNMessagesSortByType2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐMessagesSortByType(ctx context.Context, v interface{}) (entity.MessagesSortByType, error) {
+	tmp, err := graphql.UnmarshalString(v)
+	res := entity.MessagesSortByType(tmp)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNMessagesSortByType2githubᚗcomᚋsamthehaiᚋchatᚋinternalᚋdomainᚋentityᚐMessagesSortByType(ctx context.Context, sel ast.SelectionSet, v entity.MessagesSortByType) graphql.Marshaler {
 	res := graphql.MarshalString(string(v))
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {

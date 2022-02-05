@@ -9,17 +9,20 @@ import (
 )
 
 type ConversationResolver struct {
-	messageLoader loader.MessageLoader
-	userLoader    loader.UserLoader
+	messageLoader      loader.MessageLoader
+	userLoader         loader.UserLoader
+	conversationLoader loader.ConversationLoader
 }
 
 func NewConversationResolver(
 	messageLoader loader.MessageLoader,
 	userLoader loader.UserLoader,
+	conversationLoader loader.ConversationLoader,
 ) *ConversationResolver {
 	return &ConversationResolver{
-		messageLoader: messageLoader,
-		userLoader:    userLoader,
+		messageLoader:      messageLoader,
+		userLoader:         userLoader,
+		conversationLoader: conversationLoader,
 	}
 }
 
@@ -40,15 +43,34 @@ func (r *ConversationResolver) Messages(
 	obj *entity.Conversation,
 	first int,
 	after entity.ID,
+	sortBy entity.MessagesSortByType,
+	sortOrder entity.SortOrderType,
 ) (*entity.ConversationMessagesConnection, error) {
-	// TODO
-	return nil, nil
+	msgs, err := r.messageLoader.LoadMessagesInConversation(ctx,
+		entity.RelayQueryInput{
+			KeyID: obj.ID,
+			ListQueryInput: entity.ListQueryInput{
+				First:     first,
+				After:     after,
+				SortBy:    string(sortBy),
+				SortOrder: sortOrder,
+			},
+		})
+	if err != nil {
+		return nil, fmt.Errorf("load messages in conversation: %w", err)
+	}
+
+	return msgs, nil
 }
 
 func (r *ConversationResolver) Participants(
 	ctx context.Context,
 	obj *entity.Conversation,
 ) ([]*entity.User, error) {
-	// TODO
-	return nil, nil
+	pp, err := r.conversationLoader.LoadParticipantsInConversation(ctx, obj.ID)
+	if err != nil {
+		return nil, fmt.Errorf("load participants in conversation: %w", err)
+	}
+
+	return pp, nil
 }

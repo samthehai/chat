@@ -47,3 +47,12 @@ func ConvertModelMessages(msgs []*Message) []*entity.Message {
 
 	return mm
 }
+
+func GetColumnNameByMessagesSortByType(t entity.MessagesSortByType) string {
+	switch t {
+	case entity.MessagesSortByTypeCreatedAt:
+		return "created_at"
+	default:
+		return ""
+	}
+}

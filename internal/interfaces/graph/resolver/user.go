@@ -9,12 +9,15 @@ import (
 )
 
 type UserResolver struct {
-	userLoader loader.UserLoader
+	userLoader         loader.UserLoader
+	conversationLoader loader.ConversationLoader
 }
 
-func NewUserResolver(userLoader loader.UserLoader) *UserResolver {
+func NewUserResolver(userLoader loader.UserLoader,
+	conversationLoader loader.ConversationLoader) *UserResolver {
 	return &UserResolver{
-		userLoader: userLoader,
+		userLoader:         userLoader,
+		conversationLoader: conversationLoader,
 	}
 }
 
@@ -26,12 +29,12 @@ func (r *UserResolver) Friends(
 	sortBy entity.FriendsSortByType,
 	sortOrder entity.SortOrderType,
 ) (*entity.FriendsConnection, error) {
-	idsCon, err := r.userLoader.LoadFriendIDs(ctx, entity.FriendsQueryInput{
-		UserID: obj.ID,
+	idsCon, err := r.userLoader.LoadFriendIDs(ctx, entity.RelayQueryInput{
+		KeyID: obj.ID,
 		ListQueryInput: entity.ListQueryInput{
 			First:     first,
 			After:     after,
-			SortBy:    sortBy,
+			SortBy:    string(sortBy),
 			SortOrder: sortOrder,
 		},
 	})
@@ -70,7 +73,45 @@ func (r *UserResolver) Conversations(
 	obj *entity.User,
 	first int,
 	after entity.ID,
+	sortBy entity.ConversationsSortByType,
+	sortOrder entity.SortOrderType,
 ) (*entity.ConversationsConnection, error) {
-	// TODO
-	return nil, nil
+	idsCon, err := r.conversationLoader.LoadConversationIDsFromUser(ctx,
+		entity.RelayQueryInput{
+			KeyID: obj.ID,
+			ListQueryInput: entity.ListQueryInput{
+				First:     first,
+				After:     after,
+				SortBy:    string(sortBy),
+				SortOrder: sortOrder,
+			},
+		})
+	if err != nil {
+		return nil, fmt.Errorf("load conversation ids: %w", err)
+	}
+
+	if idsCon == nil {
+		return nil, fmt.Errorf("load conversation ids: %w",
+			fmt.Errorf("ids connection nil"))
+	}
+
+	conversationsEdges := make([]*entity.ConversationsEdge, 0, len(idsCon.Edges))
+
+	for _, edge := range idsCon.Edges {
+		conversation, err := r.conversationLoader.LoadConversation(ctx, edge.Node)
+		if err != nil {
+			return nil, fmt.Errorf("load conversation: %w", err)
+		}
+
+		conversationsEdges = append(conversationsEdges, &entity.ConversationsEdge{
+			Cursor: conversation.ID,
+			Node:   conversation,
+		})
+	}
+
+	return &entity.ConversationsConnection{
+		PageInfo:   idsCon.PageInfo,
+		Edges:      conversationsEdges,
+		TotalCount: idsCon.TotalCount,
+	}, nil
 }

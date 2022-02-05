@@ -1,6 +1,4 @@
 type PageInfo {
-  startCursor: ID!
-  endCursor: ID!
   hasPreviousPage: Boolean!
   hasNextPage: Boolean!
 }

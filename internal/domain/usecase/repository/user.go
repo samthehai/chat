@@ -17,6 +17,6 @@ type UserRepository interface {
 	) (*entity.FriendsConnection, error)
 	FindUsers(ctx context.Context, userIDs []entity.ID) ([]*entity.User, error)
 	GetFriendIDsFromUserIDs(ctx context.Context,
-		inputs []entity.FriendsQueryInput) (map[entity.ID]*entity.IDsConnection,
+		inputs []entity.RelayQueryInput) (map[entity.ID]*entity.IDsConnection,
 		error)
 }

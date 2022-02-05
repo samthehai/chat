@@ -7,8 +7,10 @@ import (
 )
 
 type ConversationLoader interface {
-	LoadConversation(
-		ctx context.Context,
-		conversationID entity.ID,
-	) (*entity.Conversation, error)
+	LoadConversation(ctx context.Context, conversationID entity.ID) (
+		*entity.Conversation, error)
+	LoadConversationIDsFromUser(ctx context.Context,
+		input entity.RelayQueryInput) (*entity.IDsConnection, error)
+	LoadParticipantsInConversation(ctx context.Context,
+		conversationID entity.ID) ([]*entity.User, error)
 }

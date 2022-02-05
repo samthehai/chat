@@ -18,42 +18,43 @@ func NewMessageLoader(
 ) *MessageLoader {
 	return &MessageLoader{
 		messagesInConversationLoader: newMessagesInConversationLoader(
-			messageFetcher.MessagesByConversationIDs,
+			messageFetcher.MessagesInConversations,
 		),
 	}
 }
 
 func (l *MessageLoader) LoadMessagesInConversation(
 	ctx context.Context,
-	conversationID entity.ID,
-) ([]*entity.Message, error) {
-	raw, err := l.messagesInConversationLoader.Load(ctx, conversationID)()
+	input entity.RelayQueryInput,
+) (*entity.ConversationMessagesConnection, error) {
+	raw, err := l.messagesInConversationLoader.Load(ctx, input)()
 	if err != nil {
-		return nil, fmt.Errorf("load messages in conversation: id=%v, %w", conversationID, err)
+		return nil, fmt.Errorf("load messages in conversation: input=%v, %w", input, err)
 	}
 
-	if raw == nil {
-		return nil, nil
-	}
-
-	return raw.([]*entity.Message), nil
+	return raw.(*entity.ConversationMessagesConnection), nil
 }
 
 func newMessagesInConversationLoader(
-	fetchFunc func(ctx context.Context, conversationIDs []entity.ID) (map[entity.ID][]*entity.Message, error),
+	fetchFunc func(ctx context.Context, inputs []entity.RelayQueryInput) (
+		map[entity.ID]*entity.ConversationMessagesConnection, error),
 ) *dataloader.Loader {
 	return dataloader.NewBatchedLoader(
 		func(ctx context.Context, keys dataloader.Keys) []*dataloader.Result {
-			ids := getIDsFromKeys(keys)
+			inputs := make([]entity.RelayQueryInput, 0, len(keys))
 
-			mapMsgs, err := fetchFunc(ctx, ids)
+			for _, key := range keys {
+				inputs = append(inputs, key.Raw().(entity.RelayQueryInput))
+			}
+
+			mapMsgs, err := fetchFunc(ctx, inputs)
 			if err != nil {
 				return fillUpResultsWithError(len(keys), err)
 			}
 
 			results := make([]*dataloader.Result, 0, len(keys))
-			for _, id := range ids {
-				d := mapMsgs[id]
+			for _, input := range inputs {
+				d := mapMsgs[input.KeyID]
 
 				results = append(results, &dataloader.Result{
 					Data:  d,

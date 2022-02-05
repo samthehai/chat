@@ -14,7 +14,12 @@ type User {
     sortOrder: SortOrderType! = SORT_ORDER_ASC
   ): FriendsConnection!
   # conversations of user, relay loading
-  conversations(first: Int!, after: ID!): ConversationsConnection!
+  conversations(
+    first: Int!
+    after: ID!
+    sortBy: ConversationsSortByType! = CONVERSATIONS_SORT_BY_UPDATED_AT
+    sortOrder: SortOrderType! = SORT_ORDER_ASC
+  ): ConversationsConnection!
 }
 
 type Message {
@@ -37,7 +42,12 @@ type Conversation {
   updatedAt: Time!
   deletedAt: Time
   # messages in conversation, relay loading
-  messages(first: Int! = 10, after: ID! = 0): ConversationMessagesConnection!
+  messages(
+    first: Int! = 10
+    after: ID! = 0
+    sortBy: MessagesSortByType! = MESSAGES_SORT_BY_CREATED_AT
+    sortOrder: SortOrderType! = SORT_ORDER_ASC
+  ): ConversationMessagesConnection!
   # participants in conversation, relay loading
   participants: [User!]!
 }

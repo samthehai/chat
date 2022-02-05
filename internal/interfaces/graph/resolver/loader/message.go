@@ -9,6 +9,6 @@ import (
 type MessageLoader interface {
 	LoadMessagesInConversation(
 		ctx context.Context,
-		conversationID entity.ID,
-	) ([]*entity.Message, error)
+		input entity.RelayQueryInput,
+	) (*entity.ConversationMessagesConnection, error)
 }
