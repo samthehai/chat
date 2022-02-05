@@ -9,6 +9,6 @@ import (
 type UserUsecase interface {
 	Users(ctx context.Context, ids []entity.ID) ([]*entity.User, error)
 	GetFriendIDsFromUserIDs(ctx context.Context,
-		inputs []entity.UserQueryInput) (map[entity.ID]*entity.IDsConnection,
+		inputs []entity.RelayQueryInput) (map[entity.ID]*entity.IDsConnection,
 		error)
 }

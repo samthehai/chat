@@ -7,12 +7,15 @@ import (
 )
 
 type MessageUsecase interface {
-	MessagesByConversationIDs(ctx context.Context, conversationIDs []entity.ID) (
+	AllMessagesByConversationIDs(ctx context.Context, conversationIDs []entity.ID) (
 		map[entity.ID][]*entity.Message, error)
 	ConversationByIDs(ctx context.Context, conversationIDs []entity.ID) (
 		[]*entity.Conversation, error)
 	GetConversationIDsFromUserIDs(ctx context.Context,
-		inputs []entity.UserQueryInput) (map[entity.ID]*entity.IDsConnection, error)
+		inputs []entity.RelayQueryInput) (map[entity.ID]*entity.IDsConnection, error)
 	GetParticipantsInConversations(ctx context.Context,
 		conversationIDs []entity.ID) (map[entity.ID][]*entity.User, error)
+	MessagesInConversations(ctx context.Context,
+		inputs []entity.RelayQueryInput,
+	) (map[entity.ID]*entity.ConversationMessagesConnection, error)
 }

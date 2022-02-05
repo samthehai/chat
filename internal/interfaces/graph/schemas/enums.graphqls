@@ -19,3 +19,7 @@ enum ConversationType {
 enum ConversationsSortByType {
   CONVERSATIONS_SORT_BY_UPDATED_AT
 }
+
+enum MessagesSortByType {
+  MESSAGES_SORT_BY_CREATED_AT
+}

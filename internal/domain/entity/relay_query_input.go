@@ -2,13 +2,13 @@ package entity
 
 import "encoding/json"
 
-type UserQueryInput struct {
-	UserID ID
+type RelayQueryInput struct {
+	KeyID ID
 	ListQueryInput
 }
 
 // String returns a guaranteed unique string that can be used to identify an object
-func (fqi UserQueryInput) String() string {
+func (fqi RelayQueryInput) String() string {
 	str, err := json.Marshal(fqi)
 	if err != nil {
 		return ""
@@ -18,6 +18,6 @@ func (fqi UserQueryInput) String() string {
 }
 
 // Raw returns the raw, underlaying value of the key
-func (fqi UserQueryInput) Raw() interface{} {
+func (fqi RelayQueryInput) Raw() interface{} {
 	return fqi
 }

@@ -43,9 +43,24 @@ func (r *ConversationResolver) Messages(
 	obj *entity.Conversation,
 	first int,
 	after entity.ID,
+	sortBy entity.MessagesSortByType,
+	sortOrder entity.SortOrderType,
 ) (*entity.ConversationMessagesConnection, error) {
-	// TODO
-	return nil, nil
+	msgs, err := r.messageLoader.LoadMessagesInConversation(ctx,
+		entity.RelayQueryInput{
+			KeyID: obj.ID,
+			ListQueryInput: entity.ListQueryInput{
+				First:     first,
+				After:     after,
+				SortBy:    string(sortBy),
+				SortOrder: sortOrder,
+			},
+		})
+	if err != nil {
+		return nil, fmt.Errorf("load messages in conversation: %w", err)
+	}
+
+	return msgs, nil
 }
 
 func (r *ConversationResolver) Participants(

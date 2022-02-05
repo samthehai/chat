@@ -29,8 +29,8 @@ func (r *UserResolver) Friends(
 	sortBy entity.FriendsSortByType,
 	sortOrder entity.SortOrderType,
 ) (*entity.FriendsConnection, error) {
-	idsCon, err := r.userLoader.LoadFriendIDs(ctx, entity.UserQueryInput{
-		UserID: obj.ID,
+	idsCon, err := r.userLoader.LoadFriendIDs(ctx, entity.RelayQueryInput{
+		KeyID: obj.ID,
 		ListQueryInput: entity.ListQueryInput{
 			First:     first,
 			After:     after,
@@ -77,8 +77,8 @@ func (r *UserResolver) Conversations(
 	sortOrder entity.SortOrderType,
 ) (*entity.ConversationsConnection, error) {
 	idsCon, err := r.conversationLoader.LoadConversationIDsFromUser(ctx,
-		entity.UserQueryInput{
-			UserID: obj.ID,
+		entity.RelayQueryInput{
+			KeyID: obj.ID,
 			ListQueryInput: entity.ListQueryInput{
 				First:     first,
 				After:     after,

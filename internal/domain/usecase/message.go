@@ -90,8 +90,8 @@ func (u *MessageUsecase) MessagePosted(ctx context.Context) (<-chan *entity.Mess
 	return messages, nil
 }
 
-func (u *MessageUsecase) MessagesByConversationIDs(ctx context.Context, conversationIDs []entity.ID) (map[entity.ID][]*entity.Message, error) {
-	res, err := u.messageRepository.FindMessagesInConversations(ctx, conversationIDs)
+func (u *MessageUsecase) AllMessagesByConversationIDs(ctx context.Context, conversationIDs []entity.ID) (map[entity.ID][]*entity.Message, error) {
+	res, err := u.messageRepository.FindAllMessagesInConversations(ctx, conversationIDs)
 	if err != nil {
 		return nil, fmt.Errorf("find messages in conversations: %w", err)
 	}
@@ -124,7 +124,7 @@ func (u *MessageUsecase) Conversations(ctx context.Context) ([]*entity.Conversat
 
 func (u *MessageUsecase) GetConversationIDsFromUserIDs(
 	ctx context.Context,
-	inputs []entity.UserQueryInput,
+	inputs []entity.RelayQueryInput,
 ) (map[entity.ID]*entity.IDsConnection, error) {
 	users, err := u.messageRepository.FindConversationIDsFromUserIDs(ctx, inputs)
 	if err != nil {
@@ -142,4 +142,15 @@ func (u *MessageUsecase) GetParticipantsInConversations(ctx context.Context,
 	}
 
 	return participants, nil
+}
+
+func (u *MessageUsecase) MessagesInConversations(ctx context.Context,
+	inputs []entity.RelayQueryInput,
+) (map[entity.ID]*entity.ConversationMessagesConnection, error) {
+	res, err := u.messageRepository.FindMessagesInConversations(ctx, inputs)
+	if err != nil {
+		return nil, fmt.Errorf("find messages in conversations: %w", err)
+	}
+
+	return res, nil
 }

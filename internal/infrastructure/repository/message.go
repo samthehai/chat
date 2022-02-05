@@ -184,7 +184,7 @@ func (r *MessageRepository) CreateMessage(
 	return &message, nil
 }
 
-func (r *MessageRepository) FindMessagesInConversations(
+func (r *MessageRepository) FindAllMessagesInConversations(
 	ctx context.Context,
 	conversationIDs []entity.ID,
 ) (map[entity.ID][]*entity.Message, error) {
@@ -324,7 +324,7 @@ func (s *MessageRepository) FanoutMessage(
 }
 
 func (r *MessageRepository) FindConversationIDsFromUserIDs(ctx context.Context,
-	inputs []entity.UserQueryInput) (map[entity.ID]*entity.IDsConnection, error) {
+	inputs []entity.RelayQueryInput) (map[entity.ID]*entity.IDsConnection, error) {
 	// TODO: find a better solution
 	res := make(map[entity.ID]*entity.IDsConnection)
 	for _, input := range inputs {
@@ -333,14 +333,14 @@ func (r *MessageRepository) FindConversationIDsFromUserIDs(ctx context.Context,
 			return nil, fmt.Errorf("get conversation ids from user: %w", err)
 		}
 
-		res[input.UserID] = idsConnection
+		res[input.KeyID] = idsConnection
 	}
 
 	return res, nil
 }
 
 func (r *MessageRepository) getConversationIDsFromUserID(ctx context.Context,
-	input entity.UserQueryInput) (*entity.IDsConnection, error) {
+	input entity.RelayQueryInput) (*entity.IDsConnection, error) {
 	if !entity.IsValidConversationsSortByType(string(input.SortBy)) {
 		return nil, fmt.Errorf("invalid sortBy: %v", input.SortBy)
 	}
@@ -374,7 +374,7 @@ func (r *MessageRepository) getConversationIDsFromUserID(ctx context.Context,
 				"WHERE user_id = $1 " +
 				"ORDER BY " + sortColumn + " ASC, id ASC LIMIT $2"
 
-		rows, err = r.db.QueryContext(ctx, query, input.UserID, input.First)
+		rows, err = r.db.QueryContext(ctx, query, input.KeyID, input.First)
 	} else {
 		query =
 			"SELECT id, " +
@@ -417,7 +417,7 @@ func (r *MessageRepository) getConversationIDsFromUserID(ctx context.Context,
 				"AND user_id = $1 " +
 				"ORDER BY " + sortColumn + " ASC, id ASC LIMIT $2"
 
-		rows, err = r.db.QueryContext(ctx, query, input.UserID, input.First, input.After)
+		rows, err = r.db.QueryContext(ctx, query, input.KeyID, input.First, input.After)
 	}
 
 	if err != nil {
@@ -465,5 +465,157 @@ func (r *MessageRepository) getConversationIDsFromUserID(ctx context.Context,
 			HasNextPage:     hasNextPage,
 		},
 		TotalCount: len(idEdges),
+	}, nil
+}
+
+func (r *MessageRepository) FindMessagesInConversations(ctx context.Context,
+	inputs []entity.RelayQueryInput) (map[entity.ID]*entity.ConversationMessagesConnection, error) {
+	// TODO: find a better solution
+	res := make(map[entity.ID]*entity.ConversationMessagesConnection)
+	for _, input := range inputs {
+		cmc, err := r.findMessagesInConversation(ctx, input)
+		if err != nil {
+			return nil, fmt.Errorf("find conversation ids from user: %w", err)
+		}
+
+		res[input.KeyID] = cmc
+	}
+
+	return res, nil
+}
+
+func (r *MessageRepository) findMessagesInConversation(ctx context.Context,
+	input entity.RelayQueryInput) (*entity.ConversationMessagesConnection, error) {
+	if !entity.IsValidMessagesSortByType(string(input.SortBy)) {
+		return nil, fmt.Errorf("invalid sortBy: %v", input.SortBy)
+	}
+
+	sortColumn := model.GetColumnNameByMessagesSortByType(
+		entity.MessagesSortByType(input.SortBy))
+	var (
+		query string
+		rows  *sql.Rows
+		err   error
+	)
+
+	if input.After == 0 {
+		query =
+			"SELECT id, conversation_id, sender_id, type, content, created_at, updated_at, deleted_at, " +
+				"FALSE AS has_previous_page, " +
+
+				"CASE " +
+				" WHEN ( " +
+				"  SELECT COUNT(*) " +
+				"  FROM ( " +
+				"   SELECT * FROM messages " +
+				"   WHERE conversation_id = $1 " +
+				"   ORDER BY " + sortColumn + " ASC, id ASC LIMIT $2 + 1 " +
+				"  ) as np " +
+				" ) = $2 + 1 " +
+				"THEN TRUE ELSE FALSE " +
+				"END AS has_next_page " +
+
+				"FROM messages " +
+				"WHERE conversation_id = $1 " +
+				"ORDER BY " + sortColumn + " ASC, id ASC LIMIT $2"
+
+		rows, err = r.db.QueryContext(ctx, query, input.KeyID, input.First)
+	} else {
+		query =
+			"SELECT id, conversation_id, sender_id, type, content, created_at, updated_at, deleted_at, " +
+				"CASE " +
+				" WHEN ( " +
+				"  SELECT COUNT(*) FROM messages " +
+				"   WHERE " + sortColumn + " <= (SELECT " + sortColumn + " FROM messages WHERE id = $3) " +
+				"   AND id != $3 " +
+				"   AND id NOT IN " +
+				"    (SELECT id FROM messages " +
+				"      WHERE " + sortColumn + " = (SELECT " + sortColumn + " FROM messages WHERE id = $3 ) " +
+				"      AND id >= $3 ) " +
+				"   AND conversation_id = $1 " +
+				" ) > 0 " +
+				"THEN TRUE ELSE FALSE " +
+				"END AS has_previous_page, " +
+
+				"CASE " +
+				" WHEN ( " +
+				"  SELECT COUNT(*) " +
+				"  FROM ( " +
+				"   SELECT * FROM messages " +
+				"   WHERE " + sortColumn + " >= (SELECT " + sortColumn + " FROM messages WHERE id = $3 ) " +
+				"   AND id != $3 " +
+				"   AND conversation_id = $1 " +
+				"   ORDER BY " + sortColumn + " ASC, id ASC LIMIT $2 + 1 " +
+				"  ) as np " +
+				" ) = $2 + 1 " +
+				"THEN TRUE ELSE FALSE " +
+				"END AS has_next_page " +
+
+				"FROM messages " +
+				"WHERE " + sortColumn + " >= (SELECT " + sortColumn + " FROM messages WHERE id = $3 ) " +
+				"AND id != $3 " +
+				"AND id NOT IN ( " +
+				" SELECT id FROM messages " +
+				" WHERE " + sortColumn + " = (SELECT " + sortColumn + " FROM messages WHERE id = $3 ) " +
+				" AND id <= $3 " +
+				") " +
+				"AND conversation_id = $1 " +
+				"ORDER BY " + sortColumn + " ASC, id ASC LIMIT $2"
+
+		rows, err = r.db.QueryContext(ctx, query, input.KeyID, input.First, input.After)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var (
+		cmEdges         []*entity.ConversationMessagesEdge
+		hasNextPage     bool
+		hasPreviousPage bool
+	)
+
+	for rows.Next() {
+		var edge struct {
+			Message         entity.Message
+			HasNextPage     bool `json:"has_next_page"`
+			HasPreviousPage bool `json:"has_previous_page"`
+		}
+
+		if err := rows.Scan(
+			&edge.Message.ID,
+			&edge.Message.ConversationID,
+			&edge.Message.SenderID,
+			&edge.Message.Type,
+			&edge.Message.Content,
+			&edge.Message.CreatedAt,
+			&edge.Message.UpdatedAt,
+			&edge.Message.DeletedAt,
+			&edge.HasNextPage,
+			&edge.HasPreviousPage,
+		); err != nil {
+			return nil, err
+		}
+
+		hasNextPage = edge.HasNextPage
+		hasPreviousPage = edge.HasPreviousPage
+		cmEdges = append(cmEdges, &entity.ConversationMessagesEdge{
+			Node:   &edge.Message,
+			Cursor: edge.Message.ID,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &entity.ConversationMessagesConnection{
+		Edges: cmEdges,
+		PageInfo: &entity.PageInfo{
+			HasPreviousPage: hasPreviousPage,
+			HasNextPage:     hasNextPage,
+		},
+		TotalCount: len(cmEdges),
 	}, nil
 }
