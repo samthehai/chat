@@ -14,22 +14,47 @@ import (
 )
 
 type MessageRepository struct {
-	cacher   external.Cacher
-	msgChans map[entity.ID]chan *entity.Message
-	mutex    sync.RWMutex
-	db       *sql.DB
+	cacher       external.Cacher
+	msgChans     map[entity.ID]chan *entity.Message
+	mutex        sync.RWMutex
+	dbTransactor external.Transactor
+	db           *sql.DB
 }
 
 func NewMessageRepository(
 	cacher external.Cacher,
+	dbTransactor external.Transactor,
 	db *sql.DB,
 ) *MessageRepository {
 	return &MessageRepository{
-		cacher:   cacher,
-		db:       db,
-		msgChans: map[entity.ID]chan *entity.Message{},
-		mutex:    sync.RWMutex{},
+		cacher:       cacher,
+		dbTransactor: dbTransactor,
+		db:           db,
+		msgChans:     map[entity.ID]chan *entity.Message{},
+		mutex:        sync.RWMutex{},
 	}
+}
+
+func (r *MessageRepository) CreateConversationWithTransaction(
+	ctx context.Context, creatorID entity.ID, conversationTitle string,
+	conversationType entity.ConversationType, recipentIDs []entity.ID) (
+	conversationID *entity.ID, err error) {
+	fail := func(err error) (*entity.ID, error) {
+		return nil, fmt.Errorf("CreateConversationWithTransaction: %w", err)
+	}
+
+	tx, ok := r.dbTransactor.GetTransactionFromCtx(ctx)
+	if !ok {
+		return fail(fmt.Errorf("get transaction from ctx failed"))
+	}
+
+	conversationID, err = r.createConversation(ctx, tx, creatorID,
+		conversationTitle, conversationType, recipentIDs)
+	if err != nil {
+		return fail(err)
+	}
+
+	return conversationID, nil
 }
 
 func (r *MessageRepository) CreateConversation(
@@ -38,14 +63,40 @@ func (r *MessageRepository) CreateConversation(
 	conversationTitle string,
 	conversationType entity.ConversationType,
 	recipentIDs []entity.ID,
-) (*entity.ID, error) {
+) (conversationID *entity.ID, err error) {
+	fail := func(err error) (*entity.ID, error) {
+		return nil, fmt.Errorf("CreateConversation: %w", err)
+	}
+
 	tx, err := r.db.Begin()
 	if err != nil {
-		return nil, fmt.Errorf("transaction begin: %w", err)
+		return fail(fmt.Errorf("begin transaction: %w", err))
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.PrepareContext(ctx, `INSERT INTO conversations (creator_id, title, type) VALUES ($1,$2,$3) RETURNING id`)
+	conversationID, err = r.createConversation(ctx, tx, creatorID, conversationTitle,
+		conversationType, recipentIDs)
+	if err != nil {
+		return fail(err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fail(err)
+	}
+
+	return conversationID, nil
+}
+
+func (r *MessageRepository) createConversation(
+	ctx context.Context,
+	tx *sql.Tx,
+	creatorID entity.ID,
+	conversationTitle string,
+	conversationType entity.ConversationType,
+	recipentIDs []entity.ID,
+) (*entity.ID, error) {
+	stmt, err := tx.PrepareContext(ctx,
+		`INSERT INTO conversations (creator_id, title, type) VALUES ($1,$2,$3) RETURNING id`)
 	if err != nil {
 		return nil, fmt.Errorf("prepare context: %w", err)
 	}
@@ -57,18 +108,14 @@ func (r *MessageRepository) CreateConversation(
 		return nil, fmt.Errorf("exec context: %w", err)
 	}
 
-	if err := r.CreateParticipants(ctx, tx, createdID, recipentIDs); err != nil {
+	if err := r.createParticipants(ctx, tx, createdID, recipentIDs); err != nil {
 		return nil, fmt.Errorf("create participants: %w", err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, fmt.Errorf("commit: %w", err)
 	}
 
 	return &createdID, nil
 }
 
-func (r *MessageRepository) CreateParticipants(
+func (r *MessageRepository) createParticipants(
 	ctx context.Context,
 	tx *sql.Tx,
 	conversationID entity.ID,
@@ -94,11 +141,55 @@ func (r *MessageRepository) CreateParticipants(
 	return nil
 }
 
+func (r *MessageRepository) FindConversationsByIDsWithTransaction(
+	ctx context.Context,
+	conversationIDs []entity.ID,
+) ([]*entity.Conversation, error) {
+	fail := func(err error) ([]*entity.Conversation, error) {
+		return nil, fmt.Errorf("FindConversationsByIDsWithTransaction: %w", err)
+	}
+
+	tx, ok := r.dbTransactor.GetTransactionFromCtx(ctx)
+	if !ok {
+		return fail(fmt.Errorf("get transaction from ctx failed"))
+	}
+
+	conversations, err := r.findConversationsByIDs(ctx, tx, conversationIDs)
+	if err != nil {
+		return fail(err)
+	}
+
+	return conversations, nil
+}
+
 func (r *MessageRepository) FindConversationsByIDs(
 	ctx context.Context,
 	conversationIDs []entity.ID,
 ) ([]*entity.Conversation, error) {
-	rows, err := r.db.QueryContext(
+	fail := func(err error) ([]*entity.Conversation, error) {
+		return nil, fmt.Errorf("FindConversationsByIDs: %w", err)
+	}
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return fail(fmt.Errorf("begin transaction: %w", err))
+	}
+	defer tx.Rollback()
+
+	conversations, err := r.findConversationsByIDs(ctx, tx, conversationIDs)
+	if err != nil {
+		return fail(err)
+	}
+
+	return conversations, nil
+}
+
+func (r *MessageRepository) findConversationsByIDs(
+	ctx context.Context,
+	tx *sql.Tx,
+	conversationIDs []entity.ID,
+) ([]*entity.Conversation, error) {
+	rows, err := tx.QueryContext(
 		ctx,
 		`SELECT id, creator_id, title, type, created_at, updated_at, deleted_at
 			FROM conversations
@@ -136,14 +227,28 @@ func (r *MessageRepository) FindConversationsByIDs(
 	return model.ConvertModelConversations(conversations), nil
 }
 
-func (r *MessageRepository) FindConversationsByUserID(
+func (r *MessageRepository) CreateMessageWithTransaction(
 	ctx context.Context,
-	userID entity.ID,
-	first int,
-	after entity.ID,
-) ([]*entity.Conversation, error) {
-	// TODO: impl
-	return nil, nil
+	conversationID entity.ID,
+	msgType entity.MessageType,
+	senderID entity.ID,
+	msg string,
+) (*entity.Message, error) {
+	fail := func(err error) (*entity.Message, error) {
+		return nil, fmt.Errorf("CreateMessageWithTransaction: %w", err)
+	}
+
+	tx, ok := r.dbTransactor.GetTransactionFromCtx(ctx)
+	if !ok {
+		return nil, fmt.Errorf("get transaction from ctx failed")
+	}
+
+	message, err := r.createMessage(ctx, tx, conversationID, msgType, senderID, msg)
+	if err != nil {
+		return fail(err)
+	}
+
+	return message, nil
 }
 
 func (r *MessageRepository) CreateMessage(
@@ -153,8 +258,33 @@ func (r *MessageRepository) CreateMessage(
 	senderID entity.ID,
 	msg string,
 ) (*entity.Message, error) {
+	fail := func(err error) (*entity.Message, error) {
+		return nil, fmt.Errorf("CreateMessage: %w", err)
+	}
 
-	stmt, err := r.db.PrepareContext(
+	tx, err := r.db.Begin()
+	if err != nil {
+		return fail(fmt.Errorf("begin transaction: %w", err))
+	}
+	defer tx.Rollback()
+
+	message, err := r.createMessage(ctx, tx, conversationID, msgType, senderID, msg)
+	if err != nil {
+		return fail(err)
+	}
+
+	return message, nil
+}
+
+func (r *MessageRepository) createMessage(
+	ctx context.Context,
+	tx *sql.Tx,
+	conversationID entity.ID,
+	msgType entity.MessageType,
+	senderID entity.ID,
+	msg string,
+) (*entity.Message, error) {
+	stmt, err := tx.PrepareContext(
 		ctx,
 		`INSERT INTO messages(conversation_id, sender_id, type, content)
 		 VALUES ($1, $2, $3, $4)
