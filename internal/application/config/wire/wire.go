@@ -18,6 +18,7 @@ import (
 	"github.com/samthehai/chat/internal/infrastructure/external/redis"
 	"github.com/samthehai/chat/internal/infrastructure/repository"
 	"github.com/samthehai/chat/internal/infrastructure/repository/external"
+	"github.com/samthehai/chat/internal/infrastructure/repository/transactor"
 	"github.com/samthehai/chat/internal/interfaces/graph/loader"
 	loaderusecase "github.com/samthehai/chat/internal/interfaces/graph/loader/usecase"
 	"github.com/samthehai/chat/internal/interfaces/graph/resolver"
@@ -58,13 +59,16 @@ var superSet = wire.NewSet(
 
 	wire.Bind(new(usecaserepository.UserRepository), new(*repository.UserRepository)),
 	wire.Bind(new(usecaserepository.MessageRepository), new(*repository.MessageRepository)),
+	wire.Bind(new(usecaserepository.Transactor), new(*transactor.DBTransactor)),
 	wire.NewSet(
 		repository.NewMessageRepository,
 		repository.NewUserRepository,
+		transactor.NewDBTransactor,
 	),
 
 	wire.Bind(new(external.Cacher), new(*redis.RedisClient)),
 	wire.Bind(new(external.Authenticator), new(*middlewares.Authenticator)),
+	wire.Bind(new(external.Transactor), new(*transactor.DBTransactor)),
 	wire.NewSet(
 		middlewares.NewAuthenticator,
 	),

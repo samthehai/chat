@@ -18,6 +18,7 @@ import (
 	"github.com/samthehai/chat/internal/infrastructure/external/redis"
 	"github.com/samthehai/chat/internal/infrastructure/repository"
 	"github.com/samthehai/chat/internal/infrastructure/repository/external"
+	"github.com/samthehai/chat/internal/infrastructure/repository/transactor"
 	"github.com/samthehai/chat/internal/interfaces/graph/loader"
 	usecase3 "github.com/samthehai/chat/internal/interfaces/graph/loader/usecase"
 	"github.com/samthehai/chat/internal/interfaces/graph/resolver"
@@ -35,8 +36,9 @@ func InitializeServer() (server.Server, func(), error) {
 	connectionConfig := provivePostgresConnectionConfig()
 	db := postgres.NewConnection(context, connectionConfig)
 	userRepository := repository.NewUserRepository(redisClient, authenticator, db)
-	messageRepository := repository.NewMessageRepository(redisClient, db)
-	messageUsecase := usecase.NewMessageUsecase(userRepository, messageRepository)
+	dbTransactor := transactor.NewDBTransactor(db)
+	messageRepository := repository.NewMessageRepository(redisClient, dbTransactor, db)
+	messageUsecase := usecase.NewMessageUsecase(userRepository, messageRepository, dbTransactor)
 	userUsecase := usecase.NewUserUsecase(userRepository)
 	queryResolver := resolver.NewQueryResolver(messageUsecase, userUsecase)
 	mutationResolver := resolver.NewMutationResolver(messageUsecase, userUsecase)
@@ -69,7 +71,7 @@ var (
 var superSet = wire.NewSet(wire.InterfaceValue(new(context.Context), context.Background()), proviveRedisClientOption,
 	provivePostgresConnectionConfig,
 	proviveFirebaseCredentials,
-	proviveServerOption, wire.NewSet(redis.NewRedisClient, postgres.NewConnection, auth.NewFirebaseClient, server.NewServer), wire.NewSet(resolver.NewSubscriptionResolver, resolver.NewMutationResolver, resolver.NewQueryResolver, resolver.NewMessageResolver, resolver.NewConversationResolver, resolver.NewUserResolver, resolver.NewResolver), wire.Bind(new(usecase2.MessageUsecase), new(*usecase.MessageUsecase)), wire.Bind(new(usecase2.UserUsecase), new(*usecase.UserUsecase)), wire.NewSet(usecase.NewMessageUsecase, usecase.NewUserUsecase), wire.Bind(new(repository2.UserRepository), new(*repository.UserRepository)), wire.Bind(new(repository2.MessageRepository), new(*repository.MessageRepository)), wire.NewSet(repository.NewMessageRepository, repository.NewUserRepository), wire.Bind(new(external.Cacher), new(*redis.RedisClient)), wire.Bind(new(external.Authenticator), new(*middlewares.Authenticator)), wire.NewSet(middlewares.NewAuthenticator), wire.Bind(new(loader2.MessageLoader), new(*loader.MessageLoader)), wire.Bind(new(loader2.ConversationLoader), new(*loader.ConversationLoader)), wire.Bind(new(loader2.UserLoader), new(*loader.UserLoader)), wire.NewSet(loader.NewMessageLoader, loader.NewConversationLoader, loader.NewUserLoader), wire.Bind(new(usecase3.MessageUsecase), new(*usecase.MessageUsecase)), wire.Bind(new(usecase3.UserUsecase), new(*usecase.UserUsecase)), wire.Bind(new(middlewares.AuthManager), new(*auth.FirebaseClient)),
+	proviveServerOption, wire.NewSet(redis.NewRedisClient, postgres.NewConnection, auth.NewFirebaseClient, server.NewServer), wire.NewSet(resolver.NewSubscriptionResolver, resolver.NewMutationResolver, resolver.NewQueryResolver, resolver.NewMessageResolver, resolver.NewConversationResolver, resolver.NewUserResolver, resolver.NewResolver), wire.Bind(new(usecase2.MessageUsecase), new(*usecase.MessageUsecase)), wire.Bind(new(usecase2.UserUsecase), new(*usecase.UserUsecase)), wire.NewSet(usecase.NewMessageUsecase, usecase.NewUserUsecase), wire.Bind(new(repository2.UserRepository), new(*repository.UserRepository)), wire.Bind(new(repository2.MessageRepository), new(*repository.MessageRepository)), wire.Bind(new(repository2.Transactor), new(*transactor.DBTransactor)), wire.NewSet(repository.NewMessageRepository, repository.NewUserRepository, transactor.NewDBTransactor), wire.Bind(new(external.Cacher), new(*redis.RedisClient)), wire.Bind(new(external.Authenticator), new(*middlewares.Authenticator)), wire.Bind(new(external.Transactor), new(*transactor.DBTransactor)), wire.NewSet(middlewares.NewAuthenticator), wire.Bind(new(loader2.MessageLoader), new(*loader.MessageLoader)), wire.Bind(new(loader2.ConversationLoader), new(*loader.ConversationLoader)), wire.Bind(new(loader2.UserLoader), new(*loader.UserLoader)), wire.NewSet(loader.NewMessageLoader, loader.NewConversationLoader, loader.NewUserLoader), wire.Bind(new(usecase3.MessageUsecase), new(*usecase.MessageUsecase)), wire.Bind(new(usecase3.UserUsecase), new(*usecase.UserUsecase)), wire.Bind(new(middlewares.AuthManager), new(*auth.FirebaseClient)),
 )
 
 var configObj = config.NewConfigFromEnv()

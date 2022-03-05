@@ -14,11 +14,29 @@ type MessageRepository interface {
 		conversationType entity.ConversationType,
 		recipentIDs []entity.ID,
 	) (*entity.ID, error)
+	CreateConversationWithTransaction(
+		ctx context.Context,
+		creatorID entity.ID,
+		conversationTitle string,
+		conversationType entity.ConversationType,
+		recipentIDs []entity.ID,
+	) (*entity.ID, error)
+	FindConversationsByIDsWithTransaction(
+		ctx context.Context,
+		conversationIDs []entity.ID,
+	) ([]*entity.Conversation, error)
 	FindConversationsByIDs(
 		ctx context.Context,
 		conversationIDs []entity.ID,
 	) ([]*entity.Conversation, error)
 	CreateMessage(
+		ctx context.Context,
+		conversationID entity.ID,
+		msgType entity.MessageType,
+		senderID entity.ID,
+		msg string,
+	) (*entity.Message, error)
+	CreateMessageWithTransaction(
 		ctx context.Context,
 		conversationID entity.ID,
 		msgType entity.MessageType,
